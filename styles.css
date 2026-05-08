@@ -1,0 +1,214 @@
+/* ── Feedback Auto Filler — Injected Panel Styles ── */
+
+/* ── FAB (floating icon — always visible) ── */
+#faf-fab {
+  position: fixed;
+  /* top: 20px; */
+  right: 20px;
+  bottom : 20px;
+  z-index: 2147483647;
+
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #1d3461;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.22), 0 1px 4px rgba(0,0,0,0.12);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+#faf-fab:hover {
+  background: #162a50;
+  transform: scale(1.08);
+  box-shadow: 0 5px 18px rgba(0,0,0,0.28);
+}
+
+#faf-fab:active {
+  transform: scale(0.95);
+}
+
+#faf-fab svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: block;
+}
+
+/* ── Panel ── */
+#faf-panel {
+  position: fixed;
+  /* top: 72px;  */
+  right: 20px;
+  z-index: 2147483646;
+  bottom: 72px;
+
+  width: 224px;
+  background: #ffffff;
+  border: 1px solid #e2e5ea;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  color: #1a1a2e;
+  overflow: hidden;
+
+  transform-origin: top right;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+#faf-panel.faf-visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+#faf-panel.faf-hidden {
+  opacity: 0;
+  transform: scale(0.88) translateY(-10px);
+  pointer-events: none;
+}
+
+/* ── Header ── */
+#faf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 9px;
+  background: #1d3461;
+  color: #fff;
+}
+
+#faf-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Minimize button inside header */
+#faf-minimize {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.65);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  transition: color 0.12s, background 0.12s;
+  font-size: 15px;
+  line-height: 1;
+}
+
+#faf-minimize:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.15);
+}
+
+/* ── Options List ── */
+#faf-options {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Option Button ── */
+.faf-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  background: #f8f9fb;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #374151;
+  text-align: left;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.faf-btn:hover {
+  background: #eef1f6;
+  color: #1a1a2e;
+}
+
+.faf-btn.faf-active {
+  background: #e8edf5;
+  border-color: #1d3461;
+  color: #1d3461;
+  font-weight: 600;
+}
+
+/* Dot indicator */
+.faf-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid #c9ced8;
+  flex-shrink: 0;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.faf-btn.faf-active .faf-dot {
+  background: #1d3461;
+  border-color: #1d3461;
+}
+
+/* Randomize */
+.faf-btn-random {
+  margin-top: 2px;
+  background: #f0f4ff;
+  color: #3b5bdb;
+}
+
+.faf-btn-random:hover {
+  background: #e0e8ff;
+  color: #2f4ab0;
+}
+
+.faf-btn-random.faf-active {
+  background: #d8e2ff;
+  border-color: #3b5bdb;
+  color: #3b5bdb;
+}
+
+.faf-btn-random .faf-dot {
+  border-color: #aab8f5;
+}
+
+.faf-btn-random.faf-active .faf-dot {
+  background: #3b5bdb;
+  border-color: #3b5bdb;
+}
+
+/* ── Status bar ── */
+#faf-status {
+  padding: 7px 12px 9px;
+  font-size: 11px;
+  color: #6b7280;
+  text-align: center;
+  min-height: 26px;
+  border-top: 1px solid #f0f1f3;
+  transition: color 0.2s;
+}
+
+#faf-status.faf-ok {
+  color: #16a34a;
+  font-weight: 500;
+}
