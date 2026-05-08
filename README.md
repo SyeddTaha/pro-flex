@@ -3,6 +3,7 @@
 A Chrome Extension (Manifest V3) that injects a floating control panel into the NU FlexStudent feedback page, letting you fill all radio button questions in one click.
 
 ---
+<img width="1914" height="826" alt="image" src="https://github.com/user-attachments/assets/6ddad674-258d-42b0-8987-e52b71b9685c" />
 
 ## Features
 
