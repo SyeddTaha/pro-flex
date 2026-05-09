@@ -7,7 +7,7 @@ A Chrome Extension (Manifest V3) that injects a floating control panel into the 
 
 ## Features
 
-- **Floating icon** — always visible in the top-right corner, never intrudes on the page
+- **Floating icon** — always visible in the bottom-right corner, never intrudes on the page
 - **Expand / collapse** — click the icon to open the panel, click it again or press `−` to minimize
 - **One-click fill** — pick any option and all questions are answered instantly
 - **Six fill modes** — Strongly Agree, Agree, Uncertain, Dissatisfied, Strongly Disagree, or Randomize
