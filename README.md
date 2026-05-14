@@ -27,7 +27,7 @@ ProFlex is a small Chrome extension (Manifest V3) that adds lightweight producti
 ## Privacy & Data Handling
 
 - ProFlex stores only small convenience data locally in the browser: theme preference, expected marks, and transcript grade selections. No telemetry or analytics are collected.
-- The extension does not upload your portal data anywhere automatically. The only external request that may occur is when you explicitly submit the popup feedback form; that action sends only the fields you enter.
+- The extension does not upload your portal data anywhere automatically. Feedback stays local in this build.
 
 ## Installation
 1. Open Chrome and go to `chrome://extensions`
@@ -36,7 +36,6 @@ ProFlex is a small Chrome extension (Manifest V3) that adds lightweight producti
 4. Select the ProFlex folder (the folder containing `manifest.json`)
 
 ## Permissions
-- `tabs` (to open the portal pages from the popup)
 - Host match: `*://flexstudent.nu.edu.pk/*`
 
 ## Notes
