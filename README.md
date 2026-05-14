@@ -1,5 +1,5 @@
 ## ProFlex
-<img width="1400" height="560" alt="ProFlex extension for FAST NUCES FLEX" src="https://github.com/user-attachments/assets/69f26537-9a1b-464e-892b-951a47f51052" />
+<img width="1400" height="560" alt="ProFlex extension for FAST NUCES FLEX" src="ss/1.png" />
 
 
 ProFlex is a small Chrome extension (Manifest V3) that adds lightweight productivity helpers to the FlexStudent portal pages. It is intended for local use to improve convenience when viewing marks, filling course feedback, and previewing GPA changes.
@@ -15,16 +15,16 @@ ProFlex is a small Chrome extension (Manifest V3) that adds lightweight producti
 ## Screenshots
 
 ### Dark Theme
-<img width="800"  alt="Dark Theme for FAST NUCES FLEX" src="https://github.com/user-attachments/assets/eddd0278-6904-4dbc-9868-0daa0614b07d" />
+<img width="800"  alt="Dark Theme for FAST NUCES FLEX" src="ss/2.png" />
 
 ### Marks Prediction
-<img width="800"  alt="Marks for FAST NUCES FLEX" src="https://github.com/user-attachments/assets/71e37e0b-0c0f-44b2-9574-d882b308a289" />
+<img width="800"  alt="Marks for FAST NUCES FLEX" src="ss/3.png" />
 
 ### GPA Calculator
-<img width="800" alt="GPA for FAST NUCES FLEX" src="https://github.com/user-attachments/assets/0249657a-bbcc-428d-8603-867c25e0a7ea" />
+<img width="800" alt="GPA for FAST NUCES FLEX" src="ss/4.png" />
 
 ### Attendance
-<img width="800" alt="Attendance for FAST NUCES FLEX" src="https://github.com/user-attachments/assets/34cf6d90-451d-450a-915c-f33f829f83b4" />
+<img width="800" alt="Attendance for FAST NUCES FLEX" src="ss/5.png" />
 
 
 ## Privacy & Data Handling
