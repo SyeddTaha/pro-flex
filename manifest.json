@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Feedback Auto Filler",
+  "name": "ProFlex",
   "version": "2.0.0",
-  "description": "Injects a floating panel on the NU feedback page for one-click form filling.",
+  "description": "ProFlex injects helper tools into NU portal pages for feedback filling, marks recalculation, transcript GPA projection, and theme toggling.",
   "icons": {
     "16":  "icon16.png",
     "32":  "icon32.png",

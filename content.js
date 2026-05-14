@@ -1,201 +1,919 @@
-/**
- * content.js — Feedback Auto Filler v3
- * Floating icon (FAB) is always visible. Click it to expand/collapse the panel.
- * Minimize button inside the panel collapses it back to the icon.
- * Only activates on: /Student/CourseFeedback
- */
-
 (function () {
   'use strict';
 
-  // ── Guard: only run on the feedback page ─────────────────────────────────
-  if (!window.location.href.includes('/Student/CourseFeedback')) return;
+  const PATHNAME = window.location.pathname;
+  const IS_FEEDBACK_PAGE = /\/Student\/CourseFeedback/i.test(PATHNAME);
+  const IS_MARKS_PAGE = /\/Student\/StudentMarks/i.test(PATHNAME);
+  const IS_TRANSCRIPT_PAGE = /\/Student\/Transcript/i.test(PATHNAME);
+  const IS_PORTAL_PAGE = /flexstudent\.nu\.edu\.pk/i.test(window.location.hostname);
 
-  // ── Guard: prevent duplicate injection ───────────────────────────────────
-  if (document.getElementById('faf-fab')) return;
+  const DARK_STYLE_ID = 'proflex-dark-style';
+  const DARK_OVERLAY_ID = 'proflex-dark-overlay';
+  const THEME_STORAGE_KEY = 'proflex-theme';
 
-  // ── State ─────────────────────────────────────────────────────────────────
-  let isOpen = false;
+  let currentTheme = 'light';
+  let themeToggleButton = null;
 
-  // ── Option definitions ────────────────────────────────────────────────────
-  const OPTIONS = [
-    { label: 'Strongly Agree',    index: 0 },
-    { label: 'Agree',             index: 1 },
-    { label: 'Uncertain',         index: 2 },
-    { label: 'Dissatisfied',      index: 3 },
+  // Apply theme immediately to prevent white flash
+  const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+  if (storedTheme === 'dark') {
+    // Hide body until styles are applied
+    document.documentElement.style.backgroundColor = '#0c1320';
+    document.documentElement.style.color = '#e5eefc';
+    if (document.body) {
+      document.body.style.backgroundColor = '#0c1320';
+      document.body.style.color = '#e5eefc';
+    }
+    document.body.classList.add('proflex-dark');
+
+    // Inject dark mode styles immediately to prevent flash
+    if (!document.getElementById(DARK_STYLE_ID)) {
+      const style = document.createElement('style');
+      style.id = DARK_STYLE_ID;
+      style.textContent = `
+        html,
+        html.proflex-dark,
+        body,
+        body.proflex-dark {
+          background-color: #0c1320 !important;
+          color: #e5eefc !important;
+        }
+
+        body.proflex-dark,
+        body.proflex-dark div,
+        body.proflex-dark section,
+        body.proflex-dark header,
+        body.proflex-dark main,
+        body.proflex-dark footer,
+        body.proflex-dark table,
+        body.proflex-dark tbody,
+        body.proflex-dark tr,
+        body.proflex-dark td,
+        body.proflex-dark th,
+        body.proflex-dark input,
+        body.proflex-dark select,
+        body.proflex-dark textarea,
+        body.proflex-dark .card,
+        body.proflex-dark .panel,
+        body.proflex-dark .panel-body {
+          background-color: #0c1320 !important;
+          color: #e5eefc !important;
+          border-color: #253247 !important;
+        }
+        body.proflex-dark .progress {
+          background-color: #1f3a4d !important;
+        }
+        body.proflex-dark .progress-bar,
+        body.proflex-dark .bg-success {
+          background-color: #16a34a !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }
+
+  // Initialize dark mode on all portal pages
+  if (IS_PORTAL_PAGE) {
+    currentTheme = readInitialTheme();
+    applyTheme(currentTheme);
+    themeToggleButton = createThemeToggleButton();
+  }
+
+  // Initialize feature-specific functionality only on designated pages
+  const ROOT_ID = 'proflex-root';
+  if (document.getElementById(ROOT_ID)) {
+    return;
+  }
+
+  if (!IS_FEEDBACK_PAGE && !IS_MARKS_PAGE && !IS_TRANSCRIPT_PAGE) {
+    return;
+  }
+  const GRADE_SCALE = {
+    'A': 4,
+    'A-': 3.67,
+    'B+': 3.33,
+    'B': 3,
+    'B-': 2.67,
+    'C+': 2.33,
+    'C': 2,
+    'C-': 1.67,
+    'D+': 1.33,
+    'D': 1,
+    'F': 0,
+    'I': 0,
+    'S': 0,
+  };
+  const FEEDBACK_OPTIONS = [
+    { label: 'Strongly Agree', index: 0 },
+    { label: 'Agree', index: 1 },
+    { label: 'Uncertain', index: 2 },
+    { label: 'Dissatisfied', index: 3 },
     { label: 'Strongly Disagree', index: 4 },
   ];
 
-  // ── SVG icon for the FAB (form rows + green dot) ─────────────────────────
-  const FAB_ICON_SVG = `
-    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2"  y="4"  width="11" height="2.2" rx="1.1" fill="rgba(255,255,255,0.5)"/>
-      <circle cx="16" cy="5.1" r="2.1" fill="#4ade80"/>
-      <rect x="2"  y="9"  width="11" height="2.2" rx="1.1" fill="rgba(255,255,255,0.5)"/>
-      <circle cx="16" cy="10.1" r="2.1" fill="#4ade80"/>
-      <rect x="2"  y="14" width="11" height="2.2" rx="1.1" fill="rgba(255,255,255,0.5)"/>
-      <circle cx="16" cy="15.1" r="2.1" fill="#4ade80"/>
-    </svg>
-  `;
+  const root = document.createElement('div');
+  root.id = ROOT_ID;
+  (document.body || document.documentElement).appendChild(root);
 
-  // ── Build FAB ─────────────────────────────────────────────────────────────
-  const fab = document.createElement('button');
-  fab.id = 'faf-fab';
-  fab.title = 'Auto Fill Feedback';
-  fab.innerHTML = FAB_ICON_SVG;
-  document.body.appendChild(fab);
-
-  // ── Build Panel ───────────────────────────────────────────────────────────
-  const panel = document.createElement('div');
-  panel.id = 'faf-panel';
-  panel.className = 'faf-hidden';
-
-  // Header
-  const header = document.createElement('div');
-  header.id = 'faf-header';
-  header.innerHTML = `
-    <div id="faf-title">
-      <span>✦</span>
-      <span>Auto Fill Feedback</span>
-    </div>
-    <button id="faf-minimize" title="Minimize">&#8722;</button>
-  `;
-
-  // Options container
-  const optionsEl = document.createElement('div');
-  optionsEl.id = 'faf-options';
-
-  OPTIONS.forEach(({ label, index }) => {
-    optionsEl.appendChild(createOptionBtn(label, false, () => fill(index, false, label)));
-  });
-
-  // Randomize button
-  optionsEl.appendChild(createOptionBtn('Randomize ⚄', true, () => fill(null, true, 'Randomize')));
-
-  // Status bar
-  const statusEl = document.createElement('div');
-  statusEl.id = 'faf-status';
-  statusEl.textContent = 'Pick an option to fill.';
-
-  panel.appendChild(header);
-  panel.appendChild(optionsEl);
-  panel.appendChild(statusEl);
-  document.body.appendChild(panel);
-
-  // ── Toggle logic ──────────────────────────────────────────────────────────
-  function openPanel() {
-    isOpen = true;
-    panel.classList.remove('faf-hidden');
-    panel.classList.add('faf-visible');
-    fab.title = 'Minimize panel';
+  if (IS_FEEDBACK_PAGE) {
+    initFeedbackPage();
   }
 
-  function closePanel() {
-    isOpen = false;
-    panel.classList.remove('faf-visible');
-    panel.classList.add('faf-hidden');
-    fab.title = 'Auto Fill Feedback';
+  if (IS_MARKS_PAGE) {
+    initMarksPage();
   }
 
-  // FAB click: toggle
-  fab.addEventListener('click', () => {
-    isOpen ? closePanel() : openPanel();
-  });
-
-  // Minimize button inside panel
-  document.getElementById('faf-minimize').addEventListener('click', closePanel);
-
-  // ── Button factory ────────────────────────────────────────────────────────
-  function createOptionBtn(label, isRandom, onClick) {
-    const btn = document.createElement('button');
-    btn.className = 'faf-btn' + (isRandom ? ' faf-btn-random' : '');
-    btn.dataset.label = label;
-
-    const dot = document.createElement('span');
-    dot.className = 'faf-dot';
-
-    const text = document.createElement('span');
-    text.textContent = label;
-
-    btn.appendChild(dot);
-    btn.appendChild(text);
-    btn.addEventListener('click', onClick);
-    return btn;
+  if (IS_TRANSCRIPT_PAGE) {
+    initTranscriptPage();
   }
 
-  // ── Highlight active button ───────────────────────────────────────────────
-  function setActiveBtn(clickedLabel) {
-    optionsEl.querySelectorAll('.faf-btn').forEach((btn) => {
-      btn.classList.toggle('faf-active', btn.dataset.label === clickedLabel);
-    });
+  function readInitialTheme() {
+    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (storedTheme === 'dark' || storedTheme === 'light') {
+      return storedTheme;
+    }
+
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
 
-  // ── Core fill logic ───────────────────────────────────────────────────────
-  function fill(fixedIndex, randomize, label) {
-    setActiveBtn(label);
-    setStatus('Filling…', false);
+  function applyTheme(nextTheme) {
+    currentTheme = nextTheme === 'dark' ? 'dark' : 'light';
+    localStorage.setItem(THEME_STORAGE_KEY, currentTheme);
 
-    const allRadios = document.querySelectorAll('input[type="radio"]');
+    if (currentTheme === 'dark') {
+      enableDarkModeChromeStyle();
+      document.body.classList.add('proflex-dark');
+      document.body.classList.remove('proflex-light');
+    } else {
+      disableDarkModeChromeStyle();
+      document.body.classList.remove('proflex-dark');
+      document.body.classList.add('proflex-light');
+    }
 
-    if (allRadios.length === 0) {
-      setStatus('No radio inputs found.', false);
-      console.warn('[FAF] No radio inputs found on this page.');
+    if (themeToggleButton) {
+      themeToggleButton.setAttribute('aria-label', currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+      themeToggleButton.title = currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+      themeToggleButton.innerHTML = currentTheme === 'dark' ? lightModeIcon() : darkModeIcon();
+    }
+  }
+
+  function enableDarkModeChromeStyle() {
+    if (!document.getElementById(DARK_STYLE_ID)) {
+      const style = document.createElement('style');
+      style.id = DARK_STYLE_ID;
+      style.textContent = `
+        body.proflex-dark,
+        body.proflex-dark div,
+        body.proflex-dark section,
+        body.proflex-dark header,
+        body.proflex-dark main,
+        body.proflex-dark footer,
+        body.proflex-dark table,
+        body.proflex-dark tbody,
+        body.proflex-dark tr,
+        body.proflex-dark td,
+        body.proflex-dark th,
+        body.proflex-dark input,
+        body.proflex-dark select,
+        body.proflex-dark textarea,
+        body.proflex-dark .card,
+        body.proflex-dark .panel,
+        body.proflex-dark .panel-body {
+          background-color: #121212 !important;
+          color: #e0e0e0 !important;
+          border-color: #333 !important;
+        }
+
+        body.proflex-dark a { color: #bb86fc !important; }
+        body.proflex-dark .btn { background-color: #333 !important; color: #fff !important; }
+      `;
+      document.head.appendChild(style);
+    }
+
+    if (!document.getElementById(DARK_OVERLAY_ID)) {
+      const overlay = document.createElement('div');
+      overlay.id = DARK_OVERLAY_ID;
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '300px';
+      overlay.style.height = '80px';
+      overlay.style.backgroundColor = '#000';
+      overlay.style.zIndex = '9999';
+      overlay.style.pointerEvents = 'none';
+      document.body.appendChild(overlay);
+    }
+  }
+
+  function disableDarkModeChromeStyle() {
+    const overlay = document.getElementById(DARK_OVERLAY_ID);
+    if (overlay) {
+      overlay.remove();
+    }
+  }
+
+  function toggleTheme() {
+    applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+  }
+
+  function createThemeToggleButton() {
+    const button = document.createElement('button');
+    button.id = 'proflex-theme-toggle';
+    button.type = 'button';
+    button.className = 'proflex-theme-toggle';
+    button.addEventListener('click', toggleTheme);
+    button.setAttribute('aria-label', 'Toggle theme');
+    button.title = 'Toggle theme';
+    button.innerHTML = darkModeIcon();
+    (document.body || document.documentElement).appendChild(button);
+    return button;
+  }
+
+  function initFeedbackPage() {
+    if (document.getElementById('proflex-fab')) {
       return;
     }
 
-    // Group radios by name, preserving DOM order
-    const groups = {};
-    const groupOrder = [];
+    const fab = document.createElement('button');
+    fab.id = 'proflex-fab';
+    fab.type = 'button';
+    fab.title = 'Auto Fill Feedback';
+    fab.setAttribute('aria-label', 'Auto Fill Feedback');
+    fab.innerHTML = feedbackFabIcon();
 
-    allRadios.forEach((radio) => {
-      const name = radio.name;
-      if (!name) return;
-      if (!groups[name]) {
-        groups[name] = [];
-        groupOrder.push(name);
-      }
-      groups[name].push(radio);
+    const panel = document.createElement('div');
+    panel.id = 'proflex-panel';
+    panel.className = 'proflex-hidden';
+
+    const header = document.createElement('div');
+    header.className = 'proflex-panel-header';
+    header.innerHTML = `
+      <div class="proflex-panel-title">
+        <span class="proflex-panel-mark">✦</span>
+        <span>Auto Fill Feedback</span>
+      </div>
+      <button id="proflex-minimize" type="button" class="proflex-panel-close" title="Minimize" aria-label="Minimize">−</button>
+    `;
+
+    const options = document.createElement('div');
+    options.id = 'proflex-options';
+
+    FEEDBACK_OPTIONS.forEach(({ label, index }) => {
+      options.appendChild(createFeedbackOptionButton(label, false, () => fillFeedback(index, false, label)));
     });
 
-    let delay = 0;
+    options.appendChild(createFeedbackOptionButton('Randomize', true, () => fillFeedback(null, true, 'Randomize')));
 
-    groupOrder.forEach((name) => {
-      const group = groups[name];
+    const status = document.createElement('div');
+    status.id = 'proflex-status';
+    status.textContent = 'Pick an option to fill.';
 
-      const index = randomize
-        ? Math.floor(Math.random() * group.length)
-        : Math.min(fixedIndex, group.length - 1);
+    panel.appendChild(header);
+    panel.appendChild(options);
+    panel.appendChild(status);
 
-      const radio = group[index];
+    root.appendChild(fab);
+    root.appendChild(panel);
+
+    let isOpen = false;
+
+    function openPanel() {
+      isOpen = true;
+      panel.classList.remove('proflex-hidden');
+      panel.classList.add('proflex-visible');
+      fab.title = 'Minimize panel';
+    }
+
+    function closePanel() {
+      isOpen = false;
+      panel.classList.remove('proflex-visible');
+      panel.classList.add('proflex-hidden');
+      fab.title = 'Auto Fill Feedback';
+    }
+
+    fab.addEventListener('click', () => {
+      if (isOpen) {
+        closePanel();
+      } else {
+        openPanel();
+      }
+    });
+
+    panel.querySelector('#proflex-minimize').addEventListener('click', closePanel);
+
+    function createFeedbackOptionButton(label, isRandom, onClick) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = isRandom ? 'proflex-option proflex-option-random' : 'proflex-option';
+      button.dataset.label = label;
+
+      const dot = document.createElement('span');
+      dot.className = 'proflex-dot';
+
+      const text = document.createElement('span');
+      text.className = 'proflex-option-label';
+      text.textContent = isRandom ? 'Randomize' : label;
+
+      button.appendChild(dot);
+      button.appendChild(text);
+      button.addEventListener('click', onClick);
+      return button;
+    }
+
+    function setActiveButton(activeLabel) {
+      options.querySelectorAll('.proflex-option').forEach((button) => {
+        button.classList.toggle('proflex-active', button.dataset.label === activeLabel);
+      });
+    }
+
+    function setStatus(message, ok) {
+      status.textContent = message;
+      status.className = ok ? 'proflex-ok' : '';
+    }
+
+    function fillFeedback(fixedIndex, randomize, label) {
+      setActiveButton(label);
+      setStatus('Filling...', false);
+
+      const radios = Array.from(document.querySelectorAll('input[type="radio"]'));
+      if (radios.length === 0) {
+        setStatus('No radio inputs found.', false);
+        console.warn('[FAF] No radio inputs found on this page.');
+        return;
+      }
+
+      const groups = new Map();
+      const order = [];
+
+      radios.forEach((radio) => {
+        if (!radio.name) {
+          return;
+        }
+
+        if (!groups.has(radio.name)) {
+          groups.set(radio.name, []);
+          order.push(radio.name);
+        }
+
+        groups.get(radio.name).push(radio);
+      });
+
+      let delay = 0;
+
+      order.forEach((name) => {
+        const group = groups.get(name);
+        if (!group || group.length === 0) {
+          return;
+        }
+
+        const index = randomize ? Math.floor(Math.random() * group.length) : Math.min(fixedIndex, group.length - 1);
+        const radio = group[index];
+
+        setTimeout(() => {
+          try {
+            const labelElement = radio.closest('label');
+            if (labelElement) {
+              labelElement.click();
+            } else {
+              radio.checked = true;
+              radio.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            console.log(`[FAF] Filled "${name}" → ${label}`);
+          } catch (error) {
+            console.error(`[FAF] Error on group "${name}":`, error);
+          }
+        }, delay);
+
+        delay += 10 + Math.floor(Math.random() * 21);
+      });
 
       setTimeout(() => {
-        try {
-          const labelEl = radio.closest('label');
-          if (labelEl) {
-            labelEl.click();
-          } else {
-            radio.checked = true;
-            radio.dispatchEvent(new Event('change', { bubbles: true }));
-          }
-          console.log(`[FAF] Filled "${name}" → ${label}`);
-        } catch (err) {
-          console.error(`[FAF] Error on group "${name}":`, err);
-        }
-      }, delay);
+        setStatus(`✓ ${order.length} question(s) filled.`, true);
+        console.log(`[FAF] Done — ${order.length} group(s) filled with: ${label}`);
+      }, delay + 150);
+    }
+  }
 
-      delay += 10 + Math.floor(Math.random() * 20);
+  function initMarksPage() {
+    const portletBody = document.querySelector('.m-portlet__body');
+    if (!portletBody) {
+      return;
+    }
+
+    const tabContent = portletBody.querySelector('.tab-content');
+    if (!tabContent) {
+      return;
+    }
+
+    if (document.getElementById('proflex-marks-summary')) {
+      return;
+    }
+
+    const summaryCard = document.createElement('section');
+    summaryCard.id = 'proflex-marks-summary';
+    summaryCard.className = 'proflex-inline-card';
+    summaryCard.innerHTML = `
+      <div class="proflex-card-head">
+        <div>
+          <div class="proflex-eyebrow">ProFlex Marks</div>
+          <h3>Grand Total</h3>
+        </div>
+        <button type="button" class="proflex-card-action" data-role="refresh-marks">Recalculate</button>
+      </div>
+      <div class="proflex-stat-grid">
+        <div class="proflex-stat">
+          <span class="proflex-stat-label">Grand total</span>
+          <strong data-role="marks-value">--</strong>
+        </div>
+        <div class="proflex-stat">
+          <span class="proflex-stat-label">Coverage</span>
+          <strong data-role="marks-meta">--</strong>
+        </div>
+      </div>
+      <p class="proflex-note">Based on the visible totals in the active course tab.</p>
+    `;
+
+    portletBody.insertBefore(summaryCard, tabContent);
+
+    const refreshButton = summaryCard.querySelector('[data-role="refresh-marks"]');
+    const scheduleRefresh = createDebounced(() => renderMarksSummary(summaryCard, tabContent), 40);
+
+    refreshButton.addEventListener('click', () => renderMarksSummary(summaryCard, tabContent));
+    portletBody.addEventListener('click', scheduleRefresh, true);
+
+    const observer = new MutationObserver(scheduleRefresh);
+    observer.observe(tabContent, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['class', 'style', 'aria-expanded'],
     });
 
-    setTimeout(() => {
-      setStatus(`✓ ${groupOrder.length} question(s) filled.`, true);
-      console.log(`[FAF] Done — ${groupOrder.length} group(s) filled with: ${label}`);
-    }, delay + 150);
+    renderMarksSummary(summaryCard, tabContent);
   }
 
-  // ── Status helper ─────────────────────────────────────────────────────────
-  function setStatus(message, ok) {
-    statusEl.textContent = message;
-    statusEl.className = ok ? 'faf-ok' : '';
+  function renderMarksSummary(summaryCard, tabContent) {
+    const valueElement = summaryCard.querySelector('[data-role="marks-value"]');
+    const metaElement = summaryCard.querySelector('[data-role="marks-meta"]');
+    const data = computeVisibleMarks(tabContent);
+
+    if (!data) {
+      valueElement.textContent = '--';
+      metaElement.textContent = 'No totals found';
+      return;
+    }
+
+    const percentage = data.total ? (data.obtained / data.total) * 100 : 0;
+    valueElement.textContent = `${formatNumber(data.obtained)} / ${formatNumber(data.total)}`;
+    metaElement.textContent = `${data.sectionCount} section${data.sectionCount === 1 ? '' : 's'} • ${formatNumber(percentage)}%`;
   }
 
+  function computeVisibleMarks(tabContent) {
+    const activePane = tabContent.querySelector('.tab-pane.active') || tabContent.querySelector('.tab-pane');
+    if (!activePane) {
+      return null;
+    }
+
+    const tables = Array.from(activePane.querySelectorAll('table'));
+    let obtainedTotal = 0;
+    let possibleTotal = 0;
+    let sectionCount = 0;
+
+    tables.forEach((table) => {
+      if (isGrandTotalTable(table)) {
+        return;
+      }
+
+      const result = extractMarksTableTotal(table);
+      if (!result) {
+        return;
+      }
+
+      obtainedTotal += result.obtained;
+      possibleTotal += result.total;
+      sectionCount += 1;
+    });
+
+    if (sectionCount === 0) {
+      return null;
+    }
+
+    return {
+      obtained: obtainedTotal,
+      total: possibleTotal,
+      sectionCount,
+    };
+  }
+
+  function isGrandTotalTable(table) {
+    const card = table.closest('.card');
+    if (!card) {
+      return false;
+    }
+
+    const header = card.querySelector('.card-header');
+    const headerText = normalizeText(header ? header.textContent : '');
+    if (/grand total marks/i.test(headerText)) {
+      return true;
+    }
+
+    const collapse = card.querySelector('.collapse');
+    const collapseId = collapse ? collapse.id || '' : '';
+    return /grand_total_marks/i.test(collapseId);
+  }
+
+  function extractMarksTableTotal(table) {
+    const footerRow = table.querySelector('tfoot tr') || Array.from(table.querySelectorAll('tbody tr')).find((row) => /total/i.test(normalizeText(row.textContent)));
+
+    if (!footerRow) {
+      return null;
+    }
+
+    const bodyRows = Array.from(table.querySelectorAll('tbody tr:not(:last-child)'));
+    const hasHyphenInObtained = bodyRows.some((row) => {
+      const cells = Array.from(row.cells).map((cell) => normalizeText(cell.textContent));
+      return cells.some((cell) => /^-$/.test(cell));
+    });
+
+    if (hasHyphenInObtained) {
+      return null;
+    }
+
+    const footerCells = Array.from(footerRow.cells).map((cell) => normalizeText(cell.textContent));
+    const totalText = findCellByClass(table, ['totalColweightage', 'totalColGrandTotal', 'TotalMarks']) || footerCells[1] || footerCells[0];
+    const obtainedText = findCellByClass(table, ['totalColObtMarks', 'ObtainedMarks']) || footerCells[2] || footerCells[1];
+
+    const total = parseNumber(totalText);
+    const obtained = parseNumber(obtainedText);
+
+    if (Number.isFinite(obtained) && Number.isFinite(total)) {
+      return {
+        obtained,
+        total,
+      };
+    }
+
+    const numericValues = footerCells.map(parseNumber).filter(Number.isFinite);
+    if (numericValues.length >= 2 && !/-/.test(footerCells[1] || '') && !/-/.test(footerCells[2] || '')) {
+      return {
+        total: numericValues[0],
+        obtained: numericValues[1],
+      };
+    }
+
+    return null;
+  }
+
+  function findCellByClass(table, classNames) {
+    for (const className of classNames) {
+      const cell = table.querySelector(`.${className}`);
+      if (cell) {
+        return normalizeText(cell.textContent);
+      }
+    }
+
+    return '';
+  }
+
+  function initTranscriptPage() {
+    const transcriptContent = document.querySelector('.m-section__content');
+    if (!transcriptContent) {
+      return;
+    }
+
+    if (document.getElementById('proflex-gpa-card')) {
+      return;
+    }
+
+    const semesterRow = findSemesterRow(transcriptContent);
+    if (!semesterRow) {
+      return;
+    }
+
+    const currentSemesterBlock = findCurrentSemesterBlock(semesterRow);
+    if (!currentSemesterBlock) {
+      return;
+    }
+
+    const calculatorCard = buildTranscriptCalculatorCard();
+    transcriptContent.insertBefore(calculatorCard, semesterRow);
+
+    const semesterData = extractSemesterData(currentSemesterBlock);
+    if (!semesterData) {
+      return;
+    }
+
+    const courseRowsContainer = calculatorCard.querySelector('[data-role="course-rows"]');
+    const summaryElements = {
+      sgpa: calculatorCard.querySelector('[data-role="projected-sgpa"]'),
+      cgpa: calculatorCard.querySelector('[data-role="projected-cgpa"]'),
+      credits: calculatorCard.querySelector('[data-role="projected-credits"]'),
+      earned: calculatorCard.querySelector('[data-role="projected-earned"]'),
+      title: calculatorCard.querySelector('[data-role="semester-title"]'),
+      base: calculatorCard.querySelector('[data-role="base-summary"]'),
+    };
+
+    summaryElements.title.textContent = semesterData.title;
+    summaryElements.base.textContent = `Current CGPA ${formatNumber(semesterData.baseCgpa)} based on ${formatNumber(semesterData.baseEarnedCredits)} earned credits.`;
+
+    const courseEntries = [];
+
+    semesterData.courses.forEach((course) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${escapeHtml(course.code)}</td>
+        <td>${escapeHtml(course.name)}</td>
+        <td class="proflex-cell-center">${formatNumber(course.credits)}</td>
+        <td class="proflex-cell-center">${course.nonCredit ? 'NC' : escapeHtml(course.currentGrade)}</td>
+          <td class="proflex-cell-center"></td>
+          <td class="proflex-cell-center"></td>
+      `;
+
+      const gradeCell = row.children[4];
+        const pointsCell = row.children[5];
+
+      if (course.nonCredit) {
+        pointsCell.textContent = '0.00';
+      } else {
+        const select = createGradeSelect(course.currentGrade, () => updateTranscriptProjection());
+        gradeCell.textContent = '';
+        gradeCell.appendChild(select);
+      }
+
+      courseRowsContainer.appendChild(row);
+
+      courseEntries.push({
+        credits: course.credits,
+        nonCredit: course.nonCredit,
+        row,
+      });
+    });
+
+    calculatorCard.querySelector('[data-role="reset-grades"]').addEventListener('click', () => {
+      calculatorCard.querySelectorAll('select[data-role="grade-select"]').forEach((select) => {
+        select.value = select.dataset.defaultGrade;
+      });
+      updateTranscriptProjection();
+    });
+
+    function updateTranscriptProjection() {
+      let projectedQualityPoints = 0;
+      let projectedCredits = 0;
+
+      courseEntries.forEach((entry) => {
+        const select = entry.row.querySelector('select[data-role="grade-select"]');
+        const grade = select ? select.value : 'S';
+        const gradePoints = GRADE_SCALE[grade] || 0;
+        const rowPoints = entry.nonCredit ? 0 : entry.credits * gradePoints;
+
+        const pointsCell = entry.row.children[5];
+        pointsCell.textContent = formatNumber(rowPoints);
+
+        if (!entry.nonCredit) {
+          projectedQualityPoints += rowPoints;
+          projectedCredits += entry.credits;
+        }
+      });
+
+      const projectedSgpa = projectedCredits > 0 ? projectedQualityPoints / projectedCredits : 0;
+      const projectedCgpa = (semesterData.baseEarnedCredits + projectedCredits) > 0
+        ? ((semesterData.baseEarnedCredits * semesterData.baseCgpa) + projectedQualityPoints) / (semesterData.baseEarnedCredits + projectedCredits)
+        : semesterData.baseCgpa;
+
+      summaryElements.sgpa.textContent = formatNumber(projectedSgpa);
+      summaryElements.cgpa.textContent = formatNumber(projectedCgpa);
+      summaryElements.credits.textContent = formatNumber(projectedCredits);
+      summaryElements.earned.textContent = formatNumber(semesterData.baseEarnedCredits + projectedCredits);
+    }
+
+    updateTranscriptProjection();
+  }
+
+  function buildTranscriptCalculatorCard() {
+    const card = document.createElement('section');
+    card.id = 'proflex-gpa-card';
+    card.className = 'proflex-inline-card proflex-gpa-card';
+    card.innerHTML = `
+      <div class="proflex-card-head">
+        <div>
+          <div class="proflex-eyebrow">ProFlex GPA</div>
+          <h3 data-role="semester-title">Expected grades</h3>
+        </div>
+        <button type="button" class="proflex-card-action" data-role="reset-grades">Reset</button>
+      </div>
+      <p class="proflex-note" data-role="base-summary"></p>
+      <div class="proflex-stat-grid proflex-stat-grid-four">
+        <div class="proflex-stat">
+          <span class="proflex-stat-label">Projected SGPA</span>
+          <strong data-role="projected-sgpa">--</strong>
+        </div>
+        <div class="proflex-stat">
+          <span class="proflex-stat-label">Projected CGPA</span>
+          <strong data-role="projected-cgpa">--</strong>
+        </div>
+        <div class="proflex-stat">
+          <span class="proflex-stat-label">Semester credits</span>
+          <strong data-role="projected-credits">--</strong>
+        </div>
+        <div class="proflex-stat">
+          <span class="proflex-stat-label">Total earned</span>
+          <strong data-role="projected-earned">--</strong>
+        </div>
+      </div>
+      <div class="proflex-table-wrap">
+        <table class="proflex-gpa-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Course</th>
+              <th class="proflex-cell-center">Credits</th>
+              <th class="proflex-cell-center">Current</th>
+              <th class="proflex-cell-center">Expected</th>
+              <th class="proflex-cell-center">Points</th>
+            </tr>
+          </thead>
+          <tbody data-role="course-rows"></tbody>
+        </table>
+      </div>
+      <p class="proflex-note">Change the expected grades to preview the semester SGPA and updated CGPA.</p>
+    `;
+
+    return card;
+  }
+
+  function createGradeSelect(defaultGrade, onChange) {
+    const select = document.createElement('select');
+    select.className = 'proflex-grade-select';
+    select.dataset.role = 'grade-select';
+    select.dataset.defaultGrade = defaultGrade;
+
+    const grades = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F', 'I'];
+
+    grades.forEach((grade) => {
+      const option = document.createElement('option');
+      option.value = grade;
+      option.textContent = `${grade} (${formatNumber(GRADE_SCALE[grade] || 0)})`;
+      select.appendChild(option);
+    });
+
+    select.value = defaultGrade && grades.includes(defaultGrade) ? defaultGrade : 'I';
+    select.addEventListener('change', onChange);
+    return select;
+  }
+
+  function extractSemesterData(currentSemesterBlock) {
+    const title = normalizeText(currentSemesterBlock.querySelector('h5') ? currentSemesterBlock.querySelector('h5').textContent : 'Current Semester');
+    const summaryText = normalizeText(currentSemesterBlock.querySelector('.pull-right') ? currentSemesterBlock.querySelector('.pull-right').textContent : '');
+    const baseEarnedCredits = parseMetric(summaryText, /Cr\.?\s*Ernd\s*: ?([\d.]+)/i);
+    const baseCgpa = parseMetric(summaryText, /CGPA\s*: ?([\d.]+)/i);
+    const table = currentSemesterBlock.querySelector('table');
+
+    if (!table) {
+      return null;
+    }
+
+    const courses = Array.from(table.querySelectorAll('tbody tr')).map((row) => {
+      const cells = Array.from(row.children).map((cell) => normalizeText(cell.textContent));
+      return {
+        code: cells[0] || '',
+        name: cells[1] || '',
+        credits: parseNumber(cells[3]),
+        currentGrade: cells[4] || 'I',
+        points: parseNumber(cells[5]),
+        type: cells[6] || '',
+        remarks: cells[7] || '',
+        nonCredit: /non\s*credit/i.test(cells[6] || '') || /\bNC\b/i.test(cells[7] || '') || /^(S)$/i.test(cells[4] || ''),
+      };
+    }).filter((course) => course.code);
+
+    return {
+      title,
+      baseEarnedCredits: Number.isFinite(baseEarnedCredits) ? baseEarnedCredits : 0,
+      baseCgpa: Number.isFinite(baseCgpa) ? baseCgpa : 0,
+      courses,
+    };
+  }
+
+  function findSemesterRow(transcriptContent) {
+    const rows = Array.from(transcriptContent.querySelectorAll('.row'));
+    return rows.find((row) => Array.from(row.children).some((child) => child.classList && child.classList.contains('col-md-6') && child.querySelector('table')));
+  }
+
+  function findCurrentSemesterBlock(semesterRow) {
+    const blocks = Array.from(semesterRow.children).filter((child) => child.classList && child.classList.contains('col-md-6') && child.querySelector('table'));
+    if (blocks.length === 0) {
+      return null;
+    }
+
+    return blocks.find(isCurrentSemesterBlock) || blocks[blocks.length - 1];
+  }
+
+  function isCurrentSemesterBlock(block) {
+    const summaryText = normalizeText(block.querySelector('.pull-right') ? block.querySelector('.pull-right').textContent : '');
+    if (/SGPA\s*: ?0(?:\.0+)?/i.test(summaryText)) {
+      return true;
+    }
+
+    const gradeCells = Array.from(block.querySelectorAll('tbody td:nth-child(5)'));
+    if (gradeCells.length === 0) {
+      return false;
+    }
+
+    return gradeCells.every((cell) => /^I$/i.test(normalizeText(cell.textContent)));
+  }
+
+  function createDebounced(fn, delay) {
+    let timerId = null;
+    return function debounced() {
+      if (timerId) {
+        clearTimeout(timerId);
+      }
+
+      timerId = window.setTimeout(() => {
+        timerId = null;
+        fn();
+      }, delay);
+    };
+  }
+
+  function findHeaderIndex(headers, needles) {
+    return headers.findIndex((header) => needles.some((needle) => header.toLowerCase().includes(needle.toLowerCase())));
+  }
+
+  function parseMetric(text, regex) {
+    const match = text.match(regex);
+    return match ? parseNumber(match[1]) : NaN;
+  }
+
+  function parseNumber(value) {
+    if (typeof value !== 'string') {
+      value = String(value ?? '');
+    }
+
+    const match = value.replace(/,/g, '').match(/-?\d+(?:\.\d+)?/);
+    return match ? Number(match[0]) : NaN;
+  }
+
+  function formatNumber(value) {
+    if (!Number.isFinite(value)) {
+      return '--';
+    }
+
+    const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
+    return rounded.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+  }
+
+  function normalizeText(value) {
+    return String(value ?? '').replace(/\s+/g, ' ').trim();
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function feedbackFabIcon() {
+    return `
+      <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="2" y="4" width="11" height="2.2" rx="1.1" fill="rgba(255,255,255,0.55)" />
+        <circle cx="16" cy="5.1" r="2.1" fill="#4ade80" />
+        <rect x="2" y="9" width="11" height="2.2" rx="1.1" fill="rgba(255,255,255,0.55)" />
+        <circle cx="16" cy="10.1" r="2.1" fill="#4ade80" />
+        <rect x="2" y="14" width="11" height="2.2" rx="1.1" fill="rgba(255,255,255,0.55)" />
+        <circle cx="16" cy="15.1" r="2.1" fill="#4ade80" />
+      </svg>
+    `;
+  }
+
+  function darkModeIcon() {
+    return `
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M15.5 3.5a8.5 8.5 0 1 0 5 15.5 8.9 8.9 0 0 1-10.5-13.5A8.5 8.5 0 0 0 15.5 3.5Z" fill="currentColor"/>
+      </svg>
+    `;
+  }
+
+  function lightModeIcon() {
+    return `
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="4.5" fill="currentColor"/>
+        <g stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M12 2.5v2.2" />
+          <path d="M12 19.3v2.2" />
+          <path d="M2.5 12h2.2" />
+          <path d="M19.3 12h2.2" />
+          <path d="m5.3 5.3 1.6 1.6" />
+          <path d="m17.1 17.1 1.6 1.6" />
+          <path d="m5.3 18.7 1.6-1.6" />
+          <path d="m17.1 6.9 1.6-1.6" />
+        </g>
+      </svg>
+    `;
+  }
 })();

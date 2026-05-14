@@ -1,90 +1,304 @@
-/* ── Feedback Auto Filler — Injected Panel Styles ── */
+:root {
+  --proflex-navy: #1d3461;
+  --proflex-navy-strong: #162a50;
+  --proflex-surface: #ffffff;
+  --proflex-surface-soft: #f6f8fc;
+  --proflex-border: #e2e6ef;
+  --proflex-text: #1f2937;
+  --proflex-muted: #667085;
+  --proflex-accent: #3b82f6;
+  --proflex-success: #16a34a;
+  --proflex-shadow: 0 8px 28px rgba(17, 24, 39, 0.12), 0 1px 4px rgba(17, 24, 39, 0.06);
+}
 
-/* ── FAB (floating icon — always visible) ── */
-#faf-fab {
+body.proflex-dark {
+  --proflex-surface: #101826;
+  --proflex-surface-soft: #0d1523;
+  --proflex-border: #253247;
+  --proflex-text: #e5eefc;
+  --proflex-muted: #99a8c1;
+  --proflex-accent: #8bb7ff;
+  --proflex-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 1px 4px rgba(0, 0, 0, 0.18);
+  background: #0c1320 !important;
+  color: var(--proflex-text) !important;
+}
+
+html.proflex-dark {
+  background: #0c1320 !important;
+}
+
+body.proflex-dark,
+body.proflex-dark .m-body,
+body.proflex-dark .m-page,
+body.proflex-dark .m-content,
+body.proflex-dark .m-wrapper,
+body.proflex-dark .m-grid,
+body.proflex-dark .m-grid__item,
+body.proflex-dark .m-container,
+body.proflex-dark .m-content__body,
+body.proflex-dark .m-portlet,
+body.proflex-dark .m-portlet__body,
+body.proflex-dark .m-section,
+body.proflex-dark .m-section__content,
+body.proflex-dark .tab-content,
+body.proflex-dark .tab-pane,
+body.proflex-dark .m-footer,
+body.proflex-dark footer {
+  background: #0c1320 !important;
+  color: var(--proflex-text) !important;
+}
+
+body.proflex-dark .m-portlet__body,
+body.proflex-dark .m-section__content,
+body.proflex-dark .tab-content,
+body.proflex-dark .table-responsive,
+body.proflex-dark .row,
+body.proflex-dark .col-md-6 {
+  color: var(--proflex-text) !important;
+}
+
+body.proflex-dark .table,
+body.proflex-dark table,
+body.proflex-dark .card,
+body.proflex-dark .m-portlet,
+body.proflex-dark .m-portlet__body .card,
+body.proflex-dark .m-section__content .card,
+body.proflex-dark .collapse,
+body.proflex-dark .card-body,
+body.proflex-dark .m-widget,
+body.proflex-dark .m-widget24,
+body.proflex-dark .m-portlet__head {
+  background: var(--proflex-surface) !important;
+  color: var(--proflex-text) !important;
+  border-color: var(--proflex-border) !important;
+  border-radius: 14px !important;
+}
+
+body.proflex-dark .table,
+body.proflex-dark table {
+  overflow: hidden;
+}
+
+body.proflex-dark .table thead th,
+body.proflex-dark table thead th {
+  background: #183055 !important;
+  color: #ffffff !important;
+  border-color: var(--proflex-border) !important;
+}
+
+body.proflex-dark .table tbody td,
+body.proflex-dark table tbody td {
+  background: var(--proflex-surface) !important;
+  color: var(--proflex-text) !important;
+  border-color: var(--proflex-border) !important;
+}
+
+body.proflex-dark a {
+  color: var(--proflex-accent) !important;
+}
+
+body.proflex-dark input,
+body.proflex-dark select,
+body.proflex-dark textarea,
+body.proflex-dark .btn,
+body.proflex-dark .nav-link,
+body.proflex-dark .dropdown-toggle,
+body.proflex-dark .alert,
+body.proflex-dark .badge,
+body.proflex-dark .form-control,
+body.proflex-dark .custom-select {
+  background: #0f1728 !important;
+  color: var(--proflex-text) !important;
+  border-color: var(--proflex-border) !important;
+  border-radius: 12px !important;
+}
+
+body.proflex-dark .nav-tabs .nav-link,
+body.proflex-dark .dropdown-menu,
+body.proflex-dark .modal-content,
+body.proflex-dark .panel,
+body.proflex-dark .well,
+body.proflex-dark .alert,
+body.proflex-dark .list-group-item,
+body.proflex-dark .breadcrumb,
+body.proflex-dark .card-header,
+body.proflex-dark .m-card,
+body.proflex-dark .m-portlet .m-portlet__head,
+body.proflex-dark .table-responsive {
+  background: var(--proflex-surface) !important;
+  color: var(--proflex-text) !important;
+  border-color: var(--proflex-border) !important;
+  border-radius: 14px !important;
+}
+
+body.proflex-dark .m-portlet,
+body.proflex-dark .m-section,
+body.proflex-dark .m-content,
+body.proflex-dark .m-page,
+body.proflex-dark .m-body,
+body.proflex-dark .m-wrapper,
+body.proflex-dark .m-footer,
+body.proflex-dark footer {
+  box-shadow: none !important;
+  background: #0c1320 !important;
+  color: var(--proflex-text) !important;
+}
+
+body.proflex-dark .m-footer__content,
+body.proflex-dark .m-footer__wrapper,
+body.proflex-dark .page-footer {
+  background: #0c1320 !important;
+  color: var(--proflex-text) !important;
+}
+
+body.proflex-dark .progress,
+body.proflex-dark .progress-bar,
+body.proflex-dark .bg-success,
+body.proflex-dark .progress-bar-striped,
+body.proflex-dark .progress-bar-animated {
+  background-color: #16a34a !important;
+}
+
+body.proflex-dark .progress {
+  background-color: #1f3a4d !important;
+}
+
+body.proflex-dark .progress .progress-bar,
+body.proflex-dark .progress-bar.bg-success,
+body.proflex-dark div[class*="progress-bar"] {
+  background-color: #16a34a !important;
+  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent) !important;
+}
+
+body.proflex-dark {
+  transition: background-color 0.1s ease, color 0.1s ease !important;
+}
+
+#proflex-root {
+  position: relative;
+  z-index: 2147483640;
+}
+
+#proflex-theme-toggle {
   position: fixed;
-  /* top: 20px; */
   right: 20px;
-  bottom : 20px;
+  bottom: 20px;
   z-index: 2147483647;
-
   width: 42px;
   height: 42px;
-  border-radius: 50%;
-  background: #1d3461;
   border: none;
+  border-radius: 50%;
+  background: var(--proflex-navy);
+  color: #ffffff;
+  box-shadow: var(--proflex-shadow);
   cursor: pointer;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.22), 0 1px 4px rgba(0,0,0,0.12);
-
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-
-  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
-#faf-fab:hover {
-  background: #162a50;
-  transform: scale(1.08);
-  box-shadow: 0 5px 18px rgba(0,0,0,0.28);
+#proflex-theme-toggle:hover {
+  transform: translateY(-1px) scale(1.04);
+  background: var(--proflex-navy-strong);
 }
 
-#faf-fab:active {
-  transform: scale(0.95);
+#proflex-theme-toggle:active {
+  transform: scale(0.96);
 }
 
-#faf-fab svg {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
+#proflex-theme-toggle svg {
+  width: 18px;
+  height: 18px;
   display: block;
 }
 
-/* ── Panel ── */
-#faf-panel {
-  position: fixed;
-  /* top: 72px;  */
-  right: 20px;
-  z-index: 2147483646;
-  bottom: 72px;
+body.proflex-dark #proflex-theme-toggle {
+  background: #4f74b8;
+}
 
+body.proflex-dark #proflex-theme-toggle:hover {
+  background: #6487cb;
+}
+
+#proflex-fab {
+  position: fixed;
+  right: 20px;
+  top: 20px;
+  z-index: 2147483647;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--proflex-navy);
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--proflex-shadow);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+#proflex-fab:hover {
+  background: var(--proflex-navy-strong);
+  transform: translateY(-1px) scale(1.05);
+}
+
+#proflex-fab:active {
+  transform: scale(0.96);
+}
+
+#proflex-fab svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+#proflex-panel {
+  position: fixed;
+  right: 20px;
+  top: 72px;
+  z-index: 2147483646;
   width: 224px;
-  background: #ffffff;
-  border: 1px solid #e2e5ea;
+  background: var(--proflex-surface);
+  border: 1px solid var(--proflex-border);
   border-radius: 10px;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
+  box-shadow: var(--proflex-shadow);
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 13px;
-  color: #1a1a2e;
+  color: var(--proflex-text);
   overflow: hidden;
-
   transform-origin: top right;
   transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
-#faf-panel.faf-visible {
+#proflex-panel.proflex-visible {
   opacity: 1;
   transform: scale(1) translateY(0);
   pointer-events: auto;
 }
 
-#faf-panel.faf-hidden {
+#proflex-panel.proflex-hidden {
   opacity: 0;
   transform: scale(0.88) translateY(-10px);
   pointer-events: none;
 }
 
-/* ── Header ── */
-#faf-header {
+.proflex-panel-header,
+.proflex-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px 9px;
-  background: #1d3461;
-  color: #fff;
+  gap: 10px;
 }
 
-#faf-title {
+.proflex-panel-header {
+  padding: 10px 12px 9px;
+  background: var(--proflex-navy);
+  color: #ffffff;
+}
+
+.proflex-panel-title {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -93,122 +307,319 @@
   letter-spacing: 0.02em;
 }
 
-/* Minimize button inside header */
-#faf-minimize {
-  background: none;
+.proflex-panel-mark {
+  color: #d8e5ff;
+}
+
+.proflex-panel-close,
+.proflex-card-action {
   border: none;
-  color: rgba(255,255,255,0.65);
+  font-family: inherit;
   cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+}
+
+.proflex-panel-close {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
   width: 22px;
   height: 22px;
   border-radius: 4px;
-  transition: color 0.12s, background 0.12s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 15px;
   line-height: 1;
+  padding: 0;
+  transition: color 0.12s ease, background 0.12s ease;
 }
 
-#faf-minimize:hover {
-  color: #fff;
-  background: rgba(255,255,255,0.15);
+.proflex-panel-close:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
 }
 
-/* ── Options List ── */
-#faf-options {
+#proflex-options {
   padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-/* ── Option Button ── */
-.faf-btn {
+.proflex-option {
   width: 100%;
   display: flex;
   align-items: center;
   gap: 9px;
   padding: 8px 10px;
-  background: #f8f9fb;
+  background: var(--proflex-surface-soft);
   border: 1px solid transparent;
   border-radius: 6px;
   cursor: pointer;
   font-family: inherit;
   font-size: 12.5px;
   font-weight: 500;
-  color: #374151;
+  color: var(--proflex-text);
   text-align: left;
-  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
 }
 
-.faf-btn:hover {
-  background: #eef1f6;
-  color: #1a1a2e;
+.proflex-option:hover {
+  background: rgba(29, 52, 97, 0.08);
+  color: var(--proflex-text);
 }
 
-.faf-btn.faf-active {
-  background: #e8edf5;
-  border-color: #1d3461;
-  color: #1d3461;
+.proflex-option:active {
+  transform: scale(0.99);
+}
+
+.proflex-option.proflex-active {
+  background: rgba(29, 52, 97, 0.12);
+  border-color: var(--proflex-navy);
+  color: var(--proflex-navy);
   font-weight: 600;
 }
 
-/* Dot indicator */
-.faf-dot {
+.proflex-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   border: 1.5px solid #c9ced8;
   flex-shrink: 0;
-  transition: background 0.12s, border-color 0.12s;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 
-.faf-btn.faf-active .faf-dot {
-  background: #1d3461;
-  border-color: #1d3461;
+.proflex-option.proflex-active .proflex-dot {
+  background: var(--proflex-navy);
+  border-color: var(--proflex-navy);
 }
 
-/* Randomize */
-.faf-btn-random {
+.proflex-option-random {
   margin-top: 2px;
-  background: #f0f4ff;
   color: #3b5bdb;
+  background: #f0f4ff;
 }
 
-.faf-btn-random:hover {
+.proflex-option-random:hover {
   background: #e0e8ff;
-  color: #2f4ab0;
 }
 
-.faf-btn-random.faf-active {
+.proflex-option-random.proflex-active {
   background: #d8e2ff;
   border-color: #3b5bdb;
   color: #3b5bdb;
 }
 
-.faf-btn-random .faf-dot {
+.proflex-option-random .proflex-dot {
   border-color: #aab8f5;
 }
 
-.faf-btn-random.faf-active .faf-dot {
+.proflex-option-random.proflex-active .proflex-dot {
   background: #3b5bdb;
   border-color: #3b5bdb;
 }
 
-/* ── Status bar ── */
-#faf-status {
+#proflex-status {
   padding: 7px 12px 9px;
   font-size: 11px;
-  color: #6b7280;
+  color: var(--proflex-muted);
   text-align: center;
   min-height: 26px;
-  border-top: 1px solid #f0f1f3;
-  transition: color 0.2s;
+  border-top: 1px solid rgba(226, 230, 239, 0.8);
+  transition: color 0.2s ease;
 }
 
-#faf-status.faf-ok {
-  color: #16a34a;
+#proflex-status.proflex-ok {
+  color: var(--proflex-success);
   font-weight: 500;
+}
+
+.proflex-inline-card {
+  width: 100%;
+  margin: 0 0 16px;
+  background: var(--proflex-surface);
+  border: 1px solid var(--proflex-border);
+  border-radius: 12px;
+  box-shadow: var(--proflex-shadow);
+  color: var(--proflex-text);
+  padding: 14px 16px 12px;
+}
+
+.proflex-card-head {
+  margin-bottom: 10px;
+}
+
+.proflex-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--proflex-accent);
+  margin-bottom: 4px;
+}
+
+.proflex-card-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--proflex-text);
+}
+
+.proflex-card-action {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--proflex-navy);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.proflex-card-action:hover {
+  background: var(--proflex-navy-strong);
+  transform: translateY(-1px);
+}
+
+.proflex-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.proflex-stat-grid-four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.proflex-stat {
+  background: var(--proflex-surface-soft);
+  border: 1px solid var(--proflex-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.proflex-stat-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--proflex-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.proflex-stat strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.2;
+  color: var(--proflex-text);
+  overflow-wrap: anywhere;
+}
+
+.proflex-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--proflex-muted);
+}
+
+.proflex-table-wrap {
+  margin-top: 12px;
+  overflow-x: auto;
+  border: 1px solid var(--proflex-border);
+  border-radius: 10px;
+  background: var(--proflex-surface);
+}
+
+.proflex-gpa-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.proflex-gpa-table thead th {
+  background: #3b86e8;
+  color: #ffffff;
+  padding: 10px 10px;
+  text-align: left;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.proflex-gpa-table tbody td {
+  padding: 8px 10px;
+  border-top: 1px solid var(--proflex-border);
+  vertical-align: middle;
+  color: var(--proflex-text);
+}
+
+.proflex-gpa-table tbody tr:nth-child(even) td {
+  background: rgba(59, 134, 232, 0.04);
+}
+
+.proflex-cell-center {
+  text-align: center;
+}
+
+.proflex-grade-select {
+  width: 100%;
+  min-width: 88px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--proflex-border);
+  background: var(--proflex-surface);
+  color: var(--proflex-text);
+  font: inherit;
+  line-height: 1.2;
+}
+
+.proflex-grade-select:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.18);
+  outline-offset: 1px;
+  border-color: var(--proflex-accent);
+}
+
+body.proflex-dark .proflex-inline-card,
+body.proflex-dark .proflex-stat,
+body.proflex-dark .proflex-table-wrap {
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.18);
+}
+
+body.proflex-dark .proflex-gpa-table thead th {
+  background: #183055;
+}
+
+body.proflex-dark .proflex-option:hover {
+  background: rgba(139, 183, 255, 0.12);
+}
+
+body.proflex-dark .proflex-option.proflex-active {
+  background: rgba(139, 183, 255, 0.14);
+  border-color: var(--proflex-accent);
+  color: #d9e8ff;
+}
+
+body.proflex-dark .proflex-option-random {
+  background: rgba(59, 91, 219, 0.16);
+  color: #bdd0ff;
+}
+
+body.proflex-dark .proflex-option-random:hover {
+  background: rgba(59, 91, 219, 0.24);
+}
+
+body.proflex-dark .proflex-option-random.proflex-active {
+  background: rgba(59, 91, 219, 0.3);
+  color: #e1ebff;
+}
+
+body.proflex-dark .proflex-grade-select {
+  background: #0f1728;
+}
+
+body.proflex-dark .proflex-card-action {
+  background: #4f74b8;
+}
+
+body.proflex-dark .proflex-card-action:hover {
+  background: #6487cb;
 }
