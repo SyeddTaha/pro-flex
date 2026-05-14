@@ -27,6 +27,38 @@
   let themeToggleButton = null;
   let _proflex_session_timer = null;
 
+  // Define constants used by feature pages (must be before any initialization callbacks)
+  const GRADE_SCALE = {
+    'A': 4,
+    'A-': 3.67,
+    'B+': 3.33,
+    'B': 3,
+    'B-': 2.67,
+    'C+': 2.33,
+    'C': 2,
+    'C-': 1.67,
+    'D+': 1.33,
+    'D': 1,
+    'F': 0,
+    'I': 0,
+    'S': 0,
+  };
+  const FEEDBACK_OPTIONS = [
+    { label: 'Strongly Agree', index: 0 },
+    { label: 'Agree', index: 1 },
+    { label: 'Uncertain', index: 2 },
+    { label: 'Dissatisfied', index: 3 },
+    { label: 'Strongly Disagree', index: 4 },
+  ];
+
+  // Create root container for all ProFlex UI elements (must be before any initialization)
+  const ROOT_ID = 'proflex-root';
+  const root = document.createElement('div');
+  root.id = ROOT_ID;
+  if (!document.getElementById(ROOT_ID)) {
+    (document.body || document.documentElement).appendChild(root);
+  }
+
   // Apply theme immediately to prevent white flash
   const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
   if (storedTheme === 'dark') {
@@ -98,20 +130,7 @@
       // call `initSessionKeeper()` manually from the popup or dev console if needed
     }
 
-    // Initialize feature-specific functionality only on designated pages
-    const ROOT_ID = 'proflex-root';
-    if (document.getElementById(ROOT_ID)) {
-      return;
-    }
-
-    if (!IS_FEEDBACK_PAGE && !IS_MARKS_PAGE && !IS_TRANSCRIPT_PAGE && !IS_ATTENDANCE_PAGE) {
-      return;
-    }
-
-    const root = document.createElement('div');
-    root.id = ROOT_ID;
-    (document.body || document.documentElement).appendChild(root);
-
+    // Root container is already created at top level, just initialize features
     if (IS_FEEDBACK_PAGE && featureFeedbackEnabled) {
       initFeedbackPage();
     }
@@ -205,51 +224,21 @@
   }
 
   // Initialize feature-specific functionality only on designated pages
-  const ROOT_ID = 'proflex-root';
   if (document.getElementById(ROOT_ID)) {
-    return;
-  }
+    // Root already exists, initialization was already done
+  } else if (IS_FEEDBACK_PAGE || IS_MARKS_PAGE || IS_TRANSCRIPT_PAGE) {
+    // Initialize for designated pages
+    if (IS_FEEDBACK_PAGE) {
+      initFeedbackPage();
+    }
 
-  if (!IS_FEEDBACK_PAGE && !IS_MARKS_PAGE && !IS_TRANSCRIPT_PAGE) {
-    return;
-  }
-  const GRADE_SCALE = {
-    'A': 4,
-    'A-': 3.67,
-    'B+': 3.33,
-    'B': 3,
-    'B-': 2.67,
-    'C+': 2.33,
-    'C': 2,
-    'C-': 1.67,
-    'D+': 1.33,
-    'D': 1,
-    'F': 0,
-    'I': 0,
-    'S': 0,
-  };
-  const FEEDBACK_OPTIONS = [
-    { label: 'Strongly Agree', index: 0 },
-    { label: 'Agree', index: 1 },
-    { label: 'Uncertain', index: 2 },
-    { label: 'Dissatisfied', index: 3 },
-    { label: 'Strongly Disagree', index: 4 },
-  ];
+    if (IS_MARKS_PAGE) {
+      initMarksPage();
+    }
 
-  const root = document.createElement('div');
-  root.id = ROOT_ID;
-  (document.body || document.documentElement).appendChild(root);
-
-  if (IS_FEEDBACK_PAGE) {
-    initFeedbackPage();
-  }
-
-  if (IS_MARKS_PAGE) {
-    initMarksPage();
-  }
-
-  if (IS_TRANSCRIPT_PAGE) {
-    initTranscriptPage();
+    if (IS_TRANSCRIPT_PAGE) {
+      initTranscriptPage();
+    }
   }
 
   function readInitialTheme() {
