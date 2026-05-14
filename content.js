@@ -152,9 +152,7 @@
     }
 
     if (themeToggleButton) {
-      themeToggleButton.setAttribute('aria-label', currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
-      themeToggleButton.title = currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
-      themeToggleButton.innerHTML = currentTheme === 'dark' ? lightModeIcon() : darkModeIcon();
+      syncThemeToggleState();
     }
   }
 
@@ -218,16 +216,53 @@
   }
 
   function createThemeToggleButton() {
-    const button = document.createElement('button');
-    button.id = 'proflex-theme-toggle';
-    button.type = 'button';
-    button.className = 'proflex-theme-toggle';
-    button.addEventListener('click', toggleTheme);
-    button.setAttribute('aria-label', 'Toggle theme');
-    button.title = 'Toggle theme';
-    button.innerHTML = currentTheme === 'dark' ? lightModeIcon() : darkModeIcon();
-    (document.body || document.documentElement).appendChild(button);
-    return button;
+    const wrapper = document.createElement('div');
+    wrapper.id = 'proflex-theme-toggle';
+    wrapper.className = 'proflex-theme-toggle';
+    wrapper.innerHTML = `
+      <span class="proflex-theme-label proflex-theme-label-light" data-role="theme-light-label" aria-hidden="true">${darkModeIcon()}</span>
+      <label class="proflex-theme-switch-wrap" for="proflex-theme-switch">
+        <input id="proflex-theme-switch" type="checkbox" class="proflex-theme-switch" aria-label="Toggle between dark and light mode">
+        <span class="proflex-theme-switch-track" aria-hidden="true">
+          <span class="proflex-theme-switch-thumb"></span>
+        </span>
+      </label>
+      <span class="proflex-theme-label proflex-theme-label-dark" data-role="theme-dark-label" aria-hidden="true">${lightModeIcon()}</span>
+    `;
+
+    const switchInput = wrapper.querySelector('#proflex-theme-switch');
+    switchInput.addEventListener('change', () => {
+      applyTheme(switchInput.checked ? 'dark' : 'light');
+    });
+
+    (document.body || document.documentElement).appendChild(wrapper);
+    syncThemeToggleState();
+    return wrapper;
+  }
+
+  function syncThemeToggleState() {
+    if (!themeToggleButton) {
+      return;
+    }
+
+    const switchInput = themeToggleButton.querySelector('#proflex-theme-switch');
+    if (switchInput) {
+      switchInput.checked = currentTheme === 'dark';
+    }
+
+    const lightLabel = themeToggleButton.querySelector('[data-role="theme-light-label"]');
+    const darkLabel = themeToggleButton.querySelector('[data-role="theme-dark-label"]');
+
+    if (lightLabel) {
+      lightLabel.classList.toggle('proflex-theme-label-active', currentTheme !== 'dark');
+    }
+
+    if (darkLabel) {
+      darkLabel.classList.toggle('proflex-theme-label-active', currentTheme === 'dark');
+    }
+
+    themeToggleButton.setAttribute('aria-label', currentTheme === 'dark' ? 'Toggle to light mode' : 'Toggle to dark mode');
+    themeToggleButton.title = currentTheme === 'dark' ? 'Toggle to light mode' : 'Toggle to dark mode';
   }
 
   function initFeedbackPage() {
@@ -240,7 +275,7 @@
     fab.type = 'button';
     fab.title = 'Auto Fill Feedback';
     fab.setAttribute('aria-label', 'Auto Fill Feedback');
-    fab.innerHTML = feedbackFabIcon();
+    fab.textContent = 'Feedback Filler';
 
     const panel = document.createElement('div');
     panel.id = 'proflex-panel';
@@ -439,7 +474,11 @@
             <div class="proflex-eyebrow">Expected marks</div>
             <h4>Fill missing obtained marks</h4>
           </div>
-          <button type="button" class="proflex-card-action" data-role="apply-expected-marks">Recalculate</button>
+          <div class="proflex-marks-editor-actions">
+            <button type="button" class="proflex-card-action" data-role="apply-expected-marks">Recalculate</button>
+            <button type="button" class="proflex-card-action proflex-card-action-secondary" data-role="reset-expected-marks">Reset</button>
+            <button type="button" class="proflex-card-action proflex-card-action-secondary" data-role="reset-all-expected-marks">Reset All</button>
+          </div>
         </div>
         <p class="proflex-note">Only rows with hyphens are editable here. Enter the expected obtained marks for each missing row to include it in your projection.</p>
         <div class="proflex-table-wrap proflex-marks-editor-wrap">
@@ -462,6 +501,8 @@
 
     const refreshButton = summaryCard.querySelector('[data-role="refresh-marks"]');
     const applyExpectedButton = summaryCard.querySelector('[data-role="apply-expected-marks"]');
+    const resetExpectedButton = summaryCard.querySelector('[data-role="reset-expected-marks"]');
+    const resetAllExpectedButton = summaryCard.querySelector('[data-role="reset-all-expected-marks"]');
     const editorWrap = summaryCard.querySelector('[data-role="marks-editor"]');
     const editorRows = summaryCard.querySelector('[data-role="marks-editor-rows"]');
     const expectedMarksStore = loadExpectedMarksStore();
@@ -470,6 +511,38 @@
 
     refreshButton.addEventListener('click', () => renderMarksSummary(summaryCard, tabContent, expectedMarksStore));
     applyExpectedButton.addEventListener('click', () => updateProjection());
+    resetExpectedButton.addEventListener('click', () => {
+      const data = computeVisibleMarks(tabContent, expectedMarksStore);
+      if (!data || data.missingRows.length === 0) {
+        return;
+      }
+
+      summaryCard.querySelectorAll('[data-role="expected-obtained"]').forEach((input) => {
+        input.value = '';
+      });
+
+      data.missingRows.forEach((row) => {
+        delete expectedMarksStore[row.key];
+      });
+
+      saveExpectedMarksStore(expectedMarksStore);
+      updateProjection();
+      renderMarksSummary(summaryCard, tabContent, expectedMarksStore);
+    });
+
+    resetAllExpectedButton.addEventListener('click', () => {
+      summaryCard.querySelectorAll('[data-role="expected-obtained"]').forEach((input) => {
+        input.value = '';
+      });
+
+      Object.keys(expectedMarksStore).forEach((key) => {
+        delete expectedMarksStore[key];
+      });
+
+      saveExpectedMarksStore(expectedMarksStore);
+      updateProjection();
+      renderMarksSummary(summaryCard, tabContent, expectedMarksStore);
+    });
     summaryCard.addEventListener('input', (event) => {
       const input = event.target.closest('[data-role="expected-obtained"]');
       if (!input) {
@@ -508,7 +581,7 @@
         return;
       }
 
-        applyExpectedButton.addEventListener('click', updateProjection);
+      scheduleRefresh();
     }, true);
 
     const observer = new MutationObserver(scheduleRefresh);
