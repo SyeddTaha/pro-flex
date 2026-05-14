@@ -602,6 +602,23 @@ body.proflex-dark .proflex-theme-switch:checked + .proflex-theme-switch-track {
   color: var(--proflex-muted);
 }
 
+/* Attendance helper widget */
+.proflex-attendance-helper {
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--proflex-border);
+  background: var(--proflex-surface);
+  border-radius: 10px;
+  box-shadow: var(--proflex-shadow);
+  color: var(--proflex-text);
+  font-size: 13px;
+}
+.proflex-attendance-helper .proflex-attendance-head {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.proflex-attendance-helper .proflex-attendance-body div { margin-bottom: 4px; }
+
 .proflex-marks-editor {
   margin-top: 14px;
   padding-top: 14px;

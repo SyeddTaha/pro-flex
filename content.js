@@ -5,6 +5,7 @@
   const IS_FEEDBACK_PAGE = /\/Student\/CourseFeedback/i.test(PATHNAME);
   const IS_MARKS_PAGE = /\/Student\/StudentMarks/i.test(PATHNAME);
   const IS_TRANSCRIPT_PAGE = /\/Student\/Transcript/i.test(PATHNAME);
+  const IS_ATTENDANCE_PAGE = /\/Student\/(?:StudentAttendance|Attendance)/i.test(PATHNAME);
   const IS_PORTAL_PAGE = /flexstudent\.nu\.edu\.pk/i.test(window.location.hostname);
 
   const DARK_STYLE_ID = 'proflex-dark-style';
@@ -17,11 +18,15 @@
   let featureFeedbackEnabled = true;
   let featureMarksEnabled = true;
   let featureTranscriptEnabled = true;
+  let featureAttendanceEnabled = true;
+  // Session keeper is disabled by default; enable later if needed
+  let featureSessionEnabled = false;
   let featureThemeEnabled = true;
   let featureReportEnabled = true;
 
   let currentTheme = 'light';
   let themeToggleButton = null;
+  let _proflex_session_timer = null;
 
   // Apply theme immediately to prevent white flash
   const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
@@ -90,6 +95,8 @@
         applyTheme(currentTheme);
         themeToggleButton = createThemeToggleButton();
       }
+      // session keeper is not started automatically to avoid server-side session issues
+      // call `initSessionKeeper()` manually from the popup or dev console if needed
     }
 
     // Initialize feature-specific functionality only on designated pages
@@ -98,7 +105,7 @@
       return;
     }
 
-    if (!IS_FEEDBACK_PAGE && !IS_MARKS_PAGE && !IS_TRANSCRIPT_PAGE) {
+    if (!IS_FEEDBACK_PAGE && !IS_MARKS_PAGE && !IS_TRANSCRIPT_PAGE && !IS_ATTENDANCE_PAGE) {
       return;
     }
 
@@ -117,6 +124,10 @@
     if (IS_TRANSCRIPT_PAGE && featureTranscriptEnabled) {
       initTranscriptPage();
     }
+    
+    if (IS_ATTENDANCE_PAGE && featureAttendanceEnabled) {
+      initAttendanceHelper();
+    }
   }
 
   // Read saved feature toggles (from extension popup) if available
@@ -125,12 +136,14 @@
       feature_feedback: true,
       feature_marks: true,
       feature_transcript: true,
+      feature_attendance: true,
       feature_theme: true,
       feature_report: true,
     }, (items) => {
       featureFeedbackEnabled = !!items.feature_feedback;
       featureMarksEnabled = !!items.feature_marks;
       featureTranscriptEnabled = !!items.feature_transcript;
+      featureAttendanceEnabled = !!items.feature_attendance;
       featureThemeEnabled = !!items.feature_theme;
       featureReportEnabled = !!items.feature_report;
 
@@ -364,6 +377,142 @@
       document.body.appendChild(overlay);
     }
   }
+
+  /* Attendance Helper Module ------------------------------------------------- */
+  function initAttendanceHelper() {
+    try {
+      const portletBody = document.querySelector('.m-portlet__body');
+      if (!portletBody) return;
+
+      const panes = Array.from(portletBody.querySelectorAll('.tab-content .tab-pane'));
+      panes.forEach((pane) => {
+        try {
+          renderAttendanceForPane(pane);
+        } catch (e) {
+          console.warn('[ProFlex][Attendance] render failed for pane', e);
+        }
+      });
+
+      // Re-run when tab-content changes
+      const tabContent = portletBody.querySelector('.tab-content');
+      if (tabContent) {
+        const observer = new MutationObserver(() => {
+          panes.forEach((pane) => renderAttendanceForPane(pane));
+        });
+        observer.observe(tabContent, { childList: true, subtree: true });
+      }
+    } catch (err) {
+      console.warn('[ProFlex][Attendance] init failed', err);
+    }
+  }
+
+  function renderAttendanceForPane(pane) {
+    if (!pane) return;
+    // Avoid duplicate widget
+    if (pane.querySelector('.proflex-attendance-helper')) return;
+
+    const titleEl = pane.querySelector('h5');
+    const courseTitle = titleEl ? normalizeText(titleEl.textContent) : 'Course';
+
+    const table = pane.querySelector('table');
+    if (!table) return;
+
+    // Find Presence column index by header text
+    const headers = Array.from(table.querySelectorAll('thead th')).map((th) => normalizeText(th.textContent));
+    let presenceIndex = headers.findIndex((h) => /presence|status|attend/i.test(h));
+    if (presenceIndex === -1) {
+      // fallback to last column
+      presenceIndex = Math.max(0, headers.length - 1);
+    }
+
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    let absents = 0;
+    rows.forEach((row) => {
+      const cells = Array.from(row.children).map((c) => normalizeText(c.textContent));
+      const presence = cells[presenceIndex] || '';
+      if (/^A$/i.test(presence) || /absent/i.test(presence)) {
+        absents += 1;
+      }
+    });
+
+    // Build minimal widget showing only absents
+    const widget = document.createElement('div');
+    widget.className = 'proflex-attendance-helper';
+    widget.innerHTML = `
+      <div class="proflex-attendance-head">Attendance</div>
+      <div class="proflex-attendance-body">
+        <div><strong>Absents:</strong> ${absents}</div>
+      </div>
+    `;
+
+    // Insert directly before the table so it appears near course attendance
+    const tableParent = table.parentElement || pane;
+    tableParent.insertBefore(widget, table);
+
+    // Minimal color hint for absents (red if any absents)
+    const absEl = widget.querySelector('.proflex-attendance-body div');
+    if (absEl) {
+      absEl.style.color = absents > 0 ? '#a32222' : '#0b6623';
+    }
+  }
+  
+
+  /* Session Keeper Module --------------------------------------------------- */
+  function initSessionKeeper() {
+    try {
+      if (!featureSessionEnabled) return;
+      if (!IS_PORTAL_PAGE) return;
+      startSessionKeeper();
+
+      document.addEventListener('visibilitychange', () => {
+        if (!featureSessionEnabled) return;
+        if (document.visibilityState === 'visible') {
+          startSessionKeeper();
+        } else {
+          stopSessionKeeper();
+        }
+      });
+
+      // stop if login form appears (user logged out)
+      const bodyObserver = new MutationObserver(() => {
+        if (!featureSessionEnabled) return;
+        if (document.querySelector('form[action*="Login"], #kt_login_signin_form')) {
+          stopSessionKeeper();
+        }
+      });
+      bodyObserver.observe(document.body || document.documentElement, { childList: true, subtree: true });
+    } catch (err) {
+      console.warn('[ProFlex][SessionKeeper] init failed', err);
+    }
+  }
+
+  function startSessionKeeper() {
+    // Do nothing if already running
+    if (_proflex_session_timer) return;
+    // Ping every 5 minutes while visible
+    const intervalMs = 5 * 60 * 1000;
+    const keepalive = async () => {
+      try {
+        // lightweight fetch - request homepage to keep session alive
+        await fetch(window.location.origin + '/', { method: 'GET', credentials: 'include', cache: 'no-store' });
+      } catch (e) {
+        // ignore network errors
+        console.debug('[ProFlex][SessionKeeper] ping failed', e);
+      }
+    };
+
+    // Initial immediate ping
+    keepalive();
+    _proflex_session_timer = window.setInterval(keepalive, intervalMs);
+  }
+
+  function stopSessionKeeper() {
+    if (_proflex_session_timer) {
+      clearInterval(_proflex_session_timer);
+      _proflex_session_timer = null;
+    }
+  }
+
 
   function disableDarkModeChromeStyle() {
     const overlay = document.getElementById(DARK_OVERLAY_ID);
