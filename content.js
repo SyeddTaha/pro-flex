@@ -10,6 +10,7 @@
   const DARK_STYLE_ID = 'proflex-dark-style';
   const DARK_OVERLAY_ID = 'proflex-dark-overlay';
   const THEME_STORAGE_KEY = 'proflex-theme';
+  const EXPECTED_MARKS_STORAGE_KEY = 'proflex-expected-marks-v1';
 
   let currentTheme = 'light';
   let themeToggleButton = null;
@@ -224,7 +225,7 @@
     button.addEventListener('click', toggleTheme);
     button.setAttribute('aria-label', 'Toggle theme');
     button.title = 'Toggle theme';
-    button.innerHTML = darkModeIcon();
+    button.innerHTML = currentTheme === 'dark' ? lightModeIcon() : darkModeIcon();
     (document.body || document.documentElement).appendChild(button);
     return button;
   }
@@ -432,15 +433,83 @@
         </div>
       </div>
       <p class="proflex-note">Based on the visible totals in the active course tab.</p>
+      <div class="proflex-marks-editor" data-role="marks-editor" hidden>
+        <div class="proflex-marks-editor-head">
+          <div>
+            <div class="proflex-eyebrow">Expected marks</div>
+            <h4>Fill missing obtained marks</h4>
+          </div>
+          <button type="button" class="proflex-card-action" data-role="apply-expected-marks">Recalculate</button>
+        </div>
+        <p class="proflex-note">Only rows with hyphens are editable here. Enter the expected obtained marks for each missing row to include it in your projection.</p>
+        <div class="proflex-table-wrap proflex-marks-editor-wrap">
+          <table class="proflex-gpa-table proflex-marks-editor-table">
+            <thead>
+              <tr>
+                <th>Section</th>
+                <th class="proflex-cell-center">Row weightage</th>
+                <th class="proflex-cell-center">Total marks</th>
+                <th class="proflex-cell-center">Expected obtained</th>
+              </tr>
+            </thead>
+            <tbody data-role="marks-editor-rows"></tbody>
+          </table>
+        </div>
+      </div>
     `;
 
     portletBody.insertBefore(summaryCard, tabContent);
 
     const refreshButton = summaryCard.querySelector('[data-role="refresh-marks"]');
-    const scheduleRefresh = createDebounced(() => renderMarksSummary(summaryCard, tabContent), 40);
+    const applyExpectedButton = summaryCard.querySelector('[data-role="apply-expected-marks"]');
+    const editorWrap = summaryCard.querySelector('[data-role="marks-editor"]');
+    const editorRows = summaryCard.querySelector('[data-role="marks-editor-rows"]');
+    const expectedMarksStore = loadExpectedMarksStore();
+    const scheduleRefresh = createDebounced(() => renderMarksSummary(summaryCard, tabContent, expectedMarksStore), 40);
+    const updateProjection = () => updateMarksProjection(summaryCard, tabContent, expectedMarksStore);
 
-    refreshButton.addEventListener('click', () => renderMarksSummary(summaryCard, tabContent));
-    portletBody.addEventListener('click', scheduleRefresh, true);
+    refreshButton.addEventListener('click', () => renderMarksSummary(summaryCard, tabContent, expectedMarksStore));
+    applyExpectedButton.addEventListener('click', () => updateProjection());
+    summaryCard.addEventListener('input', (event) => {
+      const input = event.target.closest('[data-role="expected-obtained"]');
+      if (!input) {
+        return;
+      }
+
+      const rowKey = input.dataset.rowKey;
+      if (!rowKey) {
+        return;
+      }
+
+      if (normalizeText(input.value) === '') {
+        delete expectedMarksStore[rowKey];
+        saveExpectedMarksStore(expectedMarksStore);
+        updateProjection();
+        return;
+      }
+
+      const maxValue = parseNumber(input.dataset.rowMax || input.max);
+      const currentValue = parseNumber(input.value);
+
+      if (Number.isFinite(currentValue) && Number.isFinite(maxValue)) {
+        const clampedValue = Math.max(0, Math.min(maxValue, currentValue));
+        input.value = String(clampedValue);
+        expectedMarksStore[rowKey] = clampedValue;
+      } else if (Number.isFinite(currentValue)) {
+        expectedMarksStore[rowKey] = Math.max(0, currentValue);
+      }
+
+      saveExpectedMarksStore(expectedMarksStore);
+
+      updateProjection();
+    });
+    portletBody.addEventListener('click', (event) => {
+      if (event.target.closest('#proflex-marks-summary')) {
+        return;
+      }
+
+        applyExpectedButton.addEventListener('click', updateProjection);
+    }, true);
 
     const observer = new MutationObserver(scheduleRefresh);
     observer.observe(tabContent, {
@@ -451,37 +520,139 @@
       attributeFilter: ['class', 'style', 'aria-expanded'],
     });
 
-    renderMarksSummary(summaryCard, tabContent);
+    renderMarksSummary(summaryCard, tabContent, expectedMarksStore);
   }
 
-  function renderMarksSummary(summaryCard, tabContent) {
+  function renderMarksSummary(summaryCard, tabContent, expectedMarksStore) {
     const valueElement = summaryCard.querySelector('[data-role="marks-value"]');
     const metaElement = summaryCard.querySelector('[data-role="marks-meta"]');
-    const data = computeVisibleMarks(tabContent);
+    const editorWrap = summaryCard.querySelector('[data-role="marks-editor"]');
+    const editorRows = summaryCard.querySelector('[data-role="marks-editor-rows"]');
+    const expectedMarks = readExpectedMarks(summaryCard, expectedMarksStore);
+    const data = computeVisibleMarks(tabContent, expectedMarksStore);
 
+    if (!data) {
+      valueElement.textContent = '--';
+      metaElement.textContent = 'No totals found';
+      editorWrap.hidden = true;
+      editorRows.innerHTML = '';
+      return;
+    }
+
+    if (data.missingRows.length > 0) {
+      editorWrap.hidden = false;
+      editorRows.innerHTML = data.missingRows.map((row, index) => {
+        const rowValue = expectedMarks[row.key];
+        const rowMax = row.totalMarks > 0 ? row.totalMarks : row.weightage;
+
+        return `
+          <tr data-index="${index}">
+            <td>
+              <div class="proflex-marks-section-name">${escapeHtml(row.sectionName)}</div>
+              <div class="proflex-marks-section-detail">${escapeHtml(row.label)}</div>
+            </td>
+            <td class="proflex-cell-center">${formatNumber(row.weightage)}</td>
+            <td class="proflex-cell-center">${formatNumber(row.totalMarks)}</td>
+            <td class="proflex-cell-center">
+              <input type="number" min="0" max="${rowMax}" step="0.01" value="${rowValue !== undefined ? escapeHtml(String(rowValue)) : ''}" class="proflex-marks-input" data-role="expected-obtained" data-row-key="${escapeHtml(row.key)}" data-row-total="${escapeHtml(String(row.totalMarks))}" data-row-weightage="${escapeHtml(String(row.weightage))}" data-row-max="${escapeHtml(String(rowMax))}" placeholder="0.00">
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } else {
+      editorWrap.hidden = true;
+      editorRows.innerHTML = '';
+    }
+
+    updateMarksDisplay(summaryCard, data, expectedMarks, valueElement, metaElement);
+  }
+
+  function updateMarksProjection(summaryCard, tabContent, expectedMarksStore) {
+    const valueElement = summaryCard.querySelector('[data-role="marks-value"]');
+    const metaElement = summaryCard.querySelector('[data-role="marks-meta"]');
+    const data = computeVisibleMarks(tabContent, expectedMarksStore);
     if (!data) {
       valueElement.textContent = '--';
       metaElement.textContent = 'No totals found';
       return;
     }
 
-    const percentage = data.total ? (data.obtained / data.total) * 100 : 0;
-    valueElement.textContent = `${formatNumber(data.obtained)} / ${formatNumber(data.total)}`;
-    metaElement.textContent = `${data.sectionCount} section${data.sectionCount === 1 ? '' : 's'} • ${formatNumber(percentage)}%`;
+    updateMarksDisplay(summaryCard, data, readExpectedMarks(summaryCard, expectedMarksStore), valueElement, metaElement);
   }
 
-  function computeVisibleMarks(tabContent) {
+  function updateMarksDisplay(summaryCard, data, expectedMarks, valueElement, metaElement) {
+    const projected = applyExpectedMarks(data, expectedMarks);
+    const percentage = projected.total ? (projected.obtained / projected.total) * 100 : 0;
+    valueElement.textContent = `${formatNumber(projected.obtained)} / ${formatNumber(projected.total)}`;
+    metaElement.textContent = `${projected.sectionCount} section${projected.sectionCount === 1 ? '' : 's'} • ${formatNumber(percentage)}%`;
+  }
+
+  function readExpectedMarks(summaryCard, expectedMarksStore) {
+    const expectedMarks = { ...(expectedMarksStore || {}) };
+    summaryCard.querySelectorAll('[data-role="expected-obtained"]').forEach((input) => {
+      const rowKey = input.dataset.rowKey;
+      if (!rowKey) {
+        return;
+      }
+
+      if (normalizeText(input.value) === '') {
+        delete expectedMarks[rowKey];
+        return;
+      }
+
+      const value = parseNumber(input.value);
+      if (Number.isFinite(value)) {
+        const maxValue = parseNumber(input.dataset.rowMax || input.max);
+        expectedMarks[rowKey] = Number.isFinite(maxValue)
+          ? Math.max(0, Math.min(maxValue, value))
+          : Math.max(0, value);
+      }
+    });
+
+    return expectedMarks;
+  }
+
+  function applyExpectedMarks(data, expectedMarks) {
+    let obtainedTotal = data.obtained;
+    let possibleTotal = data.total;
+    let sectionCount = data.sectionCount;
+
+    data.missingRows.forEach((row) => {
+      const expectedValue = expectedMarks[row.key];
+      if (!Number.isFinite(expectedValue)) {
+        return;
+      }
+
+      const rowMax = row.totalMarks > 0 ? row.totalMarks : row.weightage;
+      const clampedValue = Math.max(0, Math.min(rowMax, expectedValue));
+      const contribution = row.totalMarks > 0
+        ? (clampedValue / row.totalMarks) * row.weightage
+        : clampedValue;
+      obtainedTotal += contribution;
+    });
+
+    return {
+      obtained: obtainedTotal,
+      total: possibleTotal,
+      sectionCount,
+    };
+  }
+
+  function computeVisibleMarks(tabContent, expectedMarksStore) {
     const activePane = tabContent.querySelector('.tab-pane.active') || tabContent.querySelector('.tab-pane');
     if (!activePane) {
       return null;
     }
 
+    const paneKey = getPaneStorageKey(activePane);
     const tables = Array.from(activePane.querySelectorAll('table'));
     let obtainedTotal = 0;
     let possibleTotal = 0;
     let sectionCount = 0;
+    const missingRows = [];
+    const resolvedRowKeys = [];
 
-    tables.forEach((table) => {
+    tables.forEach((table, tableIndex) => {
       if (isGrandTotalTable(table)) {
         return;
       }
@@ -494,9 +665,27 @@
       obtainedTotal += result.obtained;
       possibleTotal += result.total;
       sectionCount += 1;
+
+      const rowState = extractRowStateEntries(table, tableIndex, paneKey);
+      missingRows.push(...rowState.missingRows);
+      resolvedRowKeys.push(...rowState.resolvedRowKeys);
     });
 
-    if (sectionCount === 0) {
+    if (expectedMarksStore && resolvedRowKeys.length > 0) {
+      let didChange = false;
+      resolvedRowKeys.forEach((rowKey) => {
+        if (Object.prototype.hasOwnProperty.call(expectedMarksStore, rowKey)) {
+          delete expectedMarksStore[rowKey];
+          didChange = true;
+        }
+      });
+
+      if (didChange) {
+        saveExpectedMarksStore(expectedMarksStore);
+      }
+    }
+
+    if (sectionCount === 0 && missingRows.length === 0) {
       return null;
     }
 
@@ -504,7 +693,69 @@
       obtained: obtainedTotal,
       total: possibleTotal,
       sectionCount,
+      missingRows,
     };
+  }
+
+  function extractRowStateEntries(table, tableIndex, paneKey) {
+    const sectionName = normalizeText(table.closest('.card')?.querySelector('.card-header')?.textContent || 'Section');
+    const rows = Array.from(table.querySelectorAll('tbody tr')).filter((row) => !/total/i.test(normalizeText(row.textContent)));
+    const missingRows = [];
+    const resolvedRowKeys = [];
+
+    rows.forEach((row, index) => {
+      const cells = Array.from(row.cells).map((cell) => normalizeText(cell.textContent));
+      const label = normalizeText(cells[0] || `Row ${index + 1}`);
+      const rowKey = `${paneKey}::${sectionName}::${tableIndex}::${label}::${index}`;
+      const obtainedText = cells[2] || '';
+      if (!/^-$/.test(obtainedText)) {
+        if (Number.isFinite(parseNumber(obtainedText))) {
+          resolvedRowKeys.push(rowKey);
+        }
+        return;
+      }
+
+      const weightage = parseNumber(cells[1]);
+      const totalMarks = parseNumber(cells[3]);
+
+      if (!Number.isFinite(weightage)) {
+        return;
+      }
+
+      const normalizedTotalMarks = Number.isFinite(totalMarks) && totalMarks > 0 ? totalMarks : 0;
+
+      missingRows.push({
+        key: rowKey,
+        sectionName,
+        label,
+        weightage,
+        totalMarks: normalizedTotalMarks,
+      });
+    });
+
+    return {
+      missingRows,
+      resolvedRowKeys,
+    };
+  }
+
+  function getPaneStorageKey(activePane) {
+    const paneId = normalizeText(activePane.id || 'default-pane');
+    const escapedPaneId = escapeCssIdentifier(paneId);
+    const linkedTab = paneId
+      ? document.querySelector(`a[href="#${escapedPaneId}"], a[data-target="#${escapedPaneId}"]`)
+      : null;
+    const tabLabel = normalizeText(linkedTab ? linkedTab.textContent : '');
+    return `${PATHNAME}::${paneId}::${tabLabel}`;
+  }
+
+  function escapeCssIdentifier(value) {
+    const text = String(value ?? '');
+    if (window.CSS && typeof window.CSS.escape === 'function') {
+      return window.CSS.escape(text);
+    }
+
+    return text.replace(/([ !"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g, '\\$1');
   }
 
   function isGrandTotalTable(table) {
@@ -528,16 +779,6 @@
     const footerRow = table.querySelector('tfoot tr') || Array.from(table.querySelectorAll('tbody tr')).find((row) => /total/i.test(normalizeText(row.textContent)));
 
     if (!footerRow) {
-      return null;
-    }
-
-    const bodyRows = Array.from(table.querySelectorAll('tbody tr:not(:last-child)'));
-    const hasHyphenInObtained = bodyRows.some((row) => {
-      const cells = Array.from(row.cells).map((cell) => normalizeText(cell.textContent));
-      return cells.some((cell) => /^-$/.test(cell));
-    });
-
-    if (hasHyphenInObtained) {
       return null;
     }
 
@@ -847,6 +1088,29 @@
     return match ? parseNumber(match[1]) : NaN;
   }
 
+  function loadExpectedMarksStore() {
+    try {
+      const raw = localStorage.getItem(EXPECTED_MARKS_STORAGE_KEY);
+      if (!raw) {
+        return {};
+      }
+
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (error) {
+      console.warn('[ProFlex] Could not read expected marks store:', error);
+      return {};
+    }
+  }
+
+  function saveExpectedMarksStore(store) {
+    try {
+      localStorage.setItem(EXPECTED_MARKS_STORAGE_KEY, JSON.stringify(store || {}));
+    } catch (error) {
+      console.warn('[ProFlex] Could not save expected marks store:', error);
+    }
+  }
+
   function parseNumber(value) {
     if (typeof value !== 'string') {
       value = String(value ?? '');
@@ -893,17 +1157,17 @@
 
   function darkModeIcon() {
     return `
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M15.5 3.5a8.5 8.5 0 1 0 5 15.5 8.9 8.9 0 0 1-10.5-13.5A8.5 8.5 0 0 0 15.5 3.5Z" fill="currentColor"/>
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <path d="M19.2 15.1A8.8 8.8 0 0 1 9 4.8a8.8 8.8 0 1 0 10.2 10.3Z" fill="currentColor"/>
       </svg>
     `;
   }
 
   function lightModeIcon() {
     return `
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="12" cy="12" r="4.5" fill="currentColor"/>
-        <g stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="4.25" fill="currentColor"/>
+        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8">
           <path d="M12 2.5v2.2" />
           <path d="M12 19.3v2.2" />
           <path d="M2.5 12h2.2" />

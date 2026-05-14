@@ -207,9 +207,15 @@ body.proflex-dark {
   transform: scale(0.96);
 }
 
+#proflex-theme-toggle i {
+  font-size: 15px;
+  line-height: 1;
+  display: block;
+}
+
 #proflex-theme-toggle svg {
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
   display: block;
 }
 
@@ -522,6 +528,60 @@ body.proflex-dark #proflex-theme-toggle:hover {
   color: var(--proflex-muted);
 }
 
+.proflex-marks-editor {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--proflex-border);
+}
+
+.proflex-marks-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.proflex-marks-editor-head h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--proflex-text);
+}
+
+.proflex-marks-editor-wrap {
+  margin-top: 12px;
+}
+
+.proflex-marks-editor-table .proflex-marks-section-name {
+  font-weight: 700;
+  color: var(--proflex-text);
+}
+
+.proflex-marks-section-detail {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--proflex-muted);
+}
+
+.proflex-marks-input {
+  width: 100%;
+  min-width: 110px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--proflex-border);
+  background: var(--proflex-surface);
+  color: var(--proflex-text);
+  font: inherit;
+  text-align: center;
+}
+
+.proflex-marks-input:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.18);
+  outline-offset: 1px;
+  border-color: var(--proflex-accent);
+}
+
 .proflex-table-wrap {
   margin-top: 12px;
   overflow-x: auto;
@@ -613,6 +673,18 @@ body.proflex-dark .proflex-option-random.proflex-active {
 }
 
 body.proflex-dark .proflex-grade-select {
+  background: #0f1728;
+}
+
+body.proflex-dark .proflex-marks-editor {
+  border-top-color: var(--proflex-border);
+}
+
+body.proflex-dark .proflex-marks-section-detail {
+  color: #9aa9c3;
+}
+
+body.proflex-dark .proflex-marks-input {
   background: #0f1728;
 }
 
