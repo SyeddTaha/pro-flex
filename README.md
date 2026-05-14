@@ -40,7 +40,7 @@ ProFlex is a small Chrome extension (Manifest V3) that adds lightweight producti
 - Host match: `*://flexstudent.nu.edu.pk/*`
 
 ## Notes
-- The student report download feature has been removed/disabled in this build.
+- The student report feature is not included in this build.
 - ProFlex is not affiliated with or endorsed by FAST / NUCES. If the portal HTML changes, some selectors may need updates.
 
 ## License

@@ -22,7 +22,6 @@
   // Session keeper is disabled by default; enable later if needed
   let featureSessionEnabled = false;
   let featureThemeEnabled = true;
-  let featureReportEnabled = true;
 
   let currentTheme = 'light';
   let themeToggleButton = null;
@@ -138,39 +137,12 @@
       feature_transcript: true,
       feature_attendance: true,
       feature_theme: true,
-      feature_report: true,
     }, (items) => {
       featureFeedbackEnabled = !!items.feature_feedback;
       featureMarksEnabled = !!items.feature_marks;
       featureTranscriptEnabled = !!items.feature_transcript;
       featureAttendanceEnabled = !!items.feature_attendance;
       featureThemeEnabled = !!items.feature_theme;
-      featureReportEnabled = !!items.feature_report;
-
-      // register download handler only if report feature enabled
-      if (featureReportEnabled) {
-        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
-          chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-            if (!message || message.type !== 'proflex-download-student-report') {
-              return false;
-            }
-
-            buildStudentReport()
-              .then((reportContent) => {
-                const dateStamp = new Date().toISOString().slice(0, 10);
-                downloadTextFile(`proflex-student-report-${dateStamp}.txt`, reportContent);
-                sendResponse({ ok: true });
-              })
-              .catch((error) => {
-                const messageText = error && error.message ? error.message : 'Could not build student report.';
-                console.error('[ProFlex] Student report generation failed:', error);
-                sendResponse({ ok: false, error: messageText });
-              });
-
-            return true;
-          });
-        }
-      }
 
       initExtensionAfterSettings();
     });
@@ -229,28 +201,6 @@
           }
         }
       }
-    });
-  }
-
-  if (IS_PORTAL_PAGE && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
-    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-      if (!message || message.type !== 'proflex-download-student-report') {
-        return false;
-      }
-
-      buildStudentReport()
-        .then((reportContent) => {
-          const dateStamp = new Date().toISOString().slice(0, 10);
-          downloadTextFile(`proflex-student-report-${dateStamp}.txt`, reportContent);
-          sendResponse({ ok: true });
-        })
-        .catch((error) => {
-          const messageText = error && error.message ? error.message : 'Could not build student report.';
-          console.error('[ProFlex] Student report generation failed:', error);
-          sendResponse({ ok: false, error: messageText });
-        });
-
-      return true;
     });
   }
 
@@ -458,60 +408,11 @@
   
 
   /* Session Keeper Module --------------------------------------------------- */
-  function initSessionKeeper() {
-    try {
-      if (!featureSessionEnabled) return;
-      if (!IS_PORTAL_PAGE) return;
-      startSessionKeeper();
+  function initSessionKeeper() {}
 
-      document.addEventListener('visibilitychange', () => {
-        if (!featureSessionEnabled) return;
-        if (document.visibilityState === 'visible') {
-          startSessionKeeper();
-        } else {
-          stopSessionKeeper();
-        }
-      });
+  function startSessionKeeper() {}
 
-      // stop if login form appears (user logged out)
-      const bodyObserver = new MutationObserver(() => {
-        if (!featureSessionEnabled) return;
-        if (document.querySelector('form[action*="Login"], #kt_login_signin_form')) {
-          stopSessionKeeper();
-        }
-      });
-      bodyObserver.observe(document.body || document.documentElement, { childList: true, subtree: true });
-    } catch (err) {
-      console.warn('[ProFlex][SessionKeeper] init failed', err);
-    }
-  }
-
-  function startSessionKeeper() {
-    // Do nothing if already running
-    if (_proflex_session_timer) return;
-    // Ping every 5 minutes while visible
-    const intervalMs = 5 * 60 * 1000;
-    const keepalive = async () => {
-      try {
-        // lightweight fetch - request homepage to keep session alive
-        await fetch(window.location.origin + '/', { method: 'GET', credentials: 'include', cache: 'no-store' });
-      } catch (e) {
-        // ignore network errors
-        console.debug('[ProFlex][SessionKeeper] ping failed', e);
-      }
-    };
-
-    // Initial immediate ping
-    keepalive();
-    _proflex_session_timer = window.setInterval(keepalive, intervalMs);
-  }
-
-  function stopSessionKeeper() {
-    if (_proflex_session_timer) {
-      clearInterval(_proflex_session_timer);
-      _proflex_session_timer = null;
-    }
-  }
+  function stopSessionKeeper() {}
 
 
   function disableDarkModeChromeStyle() {
@@ -1431,147 +1332,6 @@
     } catch (error) {
       console.warn('[ProFlex] Could not save transcript GPA store:', error);
     }
-  }
-
-  async function buildStudentReport() {
-    const [marksDoc, transcriptDoc] = await Promise.all([
-      fetchPortalDocument('/Student/StudentMarks'),
-      fetchPortalDocument('/Student/Transcript'),
-    ]);
-
-    const marksSnapshot = extractMarksSnapshotForReport(marksDoc);
-    const transcriptSnapshot = extractTranscriptSnapshotForReport(transcriptDoc);
-
-    const lines = [];
-    lines.push('ProFlex Student Report');
-    lines.push(`Generated: ${new Date().toLocaleString()}`);
-    lines.push(`Source: ${window.location.origin}`);
-    lines.push('');
-    lines.push('Current CGPA');
-    lines.push(`- ${formatNumber(transcriptSnapshot.currentCgpa)}`);
-    lines.push('');
-    lines.push('Attendance');
-
-    if (marksSnapshot.attendanceEntries.length === 0) {
-      lines.push('- No attendance values found on StudentMarks page.');
-    } else {
-      marksSnapshot.attendanceEntries.forEach((entry) => {
-        lines.push(`- ${entry.course}: ${entry.value}`);
-      });
-    }
-
-    lines.push('');
-    lines.push('Marks By Course');
-
-    if (marksSnapshot.courseTotals.length === 0) {
-      lines.push('- No course totals found on StudentMarks page.');
-    } else {
-      marksSnapshot.courseTotals.forEach((course) => {
-        lines.push(`- ${course.course}: ${formatNumber(course.obtained)} / ${formatNumber(course.total)}`);
-      });
-    }
-
-    return lines.join('\n');
-  }
-
-  async function fetchPortalDocument(pathname) {
-    const url = new URL(pathname, window.location.origin).toString();
-    const response = await fetch(url, {
-      method: 'GET',
-      credentials: 'include',
-      cache: 'no-store',
-    });
-
-    const html = await response.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const responsePath = new URL(response.url, window.location.origin).pathname;
-    const title = normalizeText(doc.title || '');
-    const hasLoginForm = !!doc.querySelector('form[action*="Login"], #kt_login_signin_form, .g-recaptcha, .rc-anchor');
-
-    if (!response.ok || /\/Login$/i.test(responsePath) || (/login/i.test(title) && hasLoginForm)) {
-      throw new Error('Session appears expired. Please sign in to Flex and try downloading the report again.');
-    }
-
-    return doc;
-  }
-
-  function extractMarksSnapshotForReport(doc) {
-    const panes = Array.from(doc.querySelectorAll('.tab-content .tab-pane'));
-    const attendanceEntries = [];
-    const courseTotals = [];
-
-    panes.forEach((pane, paneIndex) => {
-      const courseTitle = normalizeText(pane.querySelector('h5') ? pane.querySelector('h5').textContent : `Course ${paneIndex + 1}`);
-      const paneText = normalizeText(pane.textContent);
-      const attendanceMatch = paneText.match(/Attendance\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*%/i);
-      if (attendanceMatch) {
-        attendanceEntries.push({
-          course: courseTitle,
-          value: `${attendanceMatch[1]}%`,
-        });
-      }
-
-      const tables = Array.from(pane.querySelectorAll('table'));
-      let obtained = 0;
-      let total = 0;
-
-      tables.forEach((table) => {
-        if (isGrandTotalTable(table)) {
-          return;
-        }
-
-        const sectionTotal = extractMarksTableTotal(table);
-        if (!sectionTotal) {
-          return;
-        }
-
-        obtained += sectionTotal.obtained;
-        total += sectionTotal.total;
-      });
-
-      if (obtained > 0 || total > 0) {
-        courseTotals.push({
-          course: courseTitle,
-          obtained,
-          total,
-        });
-      }
-    });
-
-    return {
-      attendanceEntries,
-      courseTotals,
-    };
-  }
-
-  function extractTranscriptSnapshotForReport(doc) {
-    const semesterBlocks = Array.from(doc.querySelectorAll('.m-section__content .row .col-md-6'))
-      .filter((block) => block.querySelector('table'));
-    let currentCgpa = NaN;
-
-    semesterBlocks.forEach((block) => {
-      const summaryText = normalizeText(block.querySelector('.pull-right') ? block.querySelector('.pull-right').textContent : '');
-      const cgpa = parseMetric(summaryText, /CGPA\s*: ?([\d.]+)/i);
-      if (Number.isFinite(cgpa)) {
-        currentCgpa = cgpa;
-      }
-    });
-
-    return {
-      currentCgpa: Number.isFinite(currentCgpa) ? currentCgpa : 0,
-    };
-  }
-
-  function downloadTextFile(fileName, content) {
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const objectUrl = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = objectUrl;
-    anchor.download = fileName;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(objectUrl);
   }
 
   function extractSemesterData(currentSemesterBlock) {
