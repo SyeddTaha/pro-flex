@@ -38,6 +38,15 @@ ProFlex is a small Chrome extension (Manifest V3) that adds lightweight producti
 3. Click "Load unpacked"
 4. Select the ProFlex folder (the folder containing `manifest.json`)
 
+
+## What users say
+<img width="200" alt="WhatsApp Image 2026-05-15 at 12 58 44 AM (1)" src="https://github.com/user-attachments/assets/c3e07e28-f784-4bb6-80ff-eeb5993c9118" />
+<img width="200" alt="WhatsApp Image 2026-05-15 at 12 58 44 AM (2)" src="https://github.com/user-attachments/assets/f1e1467f-ce9f-4aa4-80c2-2c20cabfbbd8" />
+<img width="200" alt="WhatsApp Image 2026-05-15 at 12 58 44 AM" src="https://github.com/user-attachments/assets/f93dcb0b-a16f-4053-8241-b9a81acb8248" />
+<img width="200" alt="WhatsApp Image 2026-05-15 at 12 58 45 AM" src="https://github.com/user-attachments/assets/a6a7e549-4903-4290-90db-60aff4ae4ffa" />
+<img width="200" alt="image" src="https://github.com/user-attachments/assets/c2278b2d-cbbd-4572-9870-68120e59bd3f" />
+<img width="200" alt="image" src="https://github.com/user-attachments/assets/59d7665b-c5cd-494c-9c5e-986d65ccb137" />
+
 ## Permissions
 - Host match: `*://flexstudent.nu.edu.pk/*`
 
