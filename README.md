@@ -1,4 +1,4 @@
-# Feedback Auto Filler
+# Pro-Flex
 
 A Chrome Extension (Manifest V3) that injects a floating control panel into the NU FlexStudent feedback page, letting you fill all radio button questions in one click.
 
