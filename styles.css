@@ -327,7 +327,7 @@ body.proflex-dark .proflex-theme-switch:checked + .proflex-theme-switch-track {
 #proflex-panel {
   position: fixed;
   right: 20px;
-  top: 72px;
+  bottom: 118px;
   z-index: 2147483646;
   width: 224px;
   background: var(--proflex-surface);
@@ -338,7 +338,7 @@ body.proflex-dark .proflex-theme-switch:checked + .proflex-theme-switch-track {
   font-size: 13px;
   color: var(--proflex-text);
   overflow: hidden;
-  transform-origin: top right;
+  transform-origin: bottom right;
   transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
@@ -350,7 +350,7 @@ body.proflex-dark .proflex-theme-switch:checked + .proflex-theme-switch-track {
 
 #proflex-panel.proflex-hidden {
   opacity: 0;
-  transform: scale(0.88) translateY(-10px);
+  transform: scale(0.88) translateY(10px);
   pointer-events: none;
 }
 
@@ -784,4 +784,22 @@ body.proflex-dark .proflex-card-action-secondary {
 
 body.proflex-dark .proflex-card-action-secondary:hover {
   background: #1a2438;
+}
+
+body.proflex-dark .input-group .input-group-addon,
+body.proflex-dark .input-group-addon {
+  border: none !important;
+  border-color: transparent !important;
+  background-color: transparent !important;
+  color: #575962 !important;
+}
+
+body.proflex-dark .rc-anchor-normal,
+body.proflex-dark .rc-anchor-light {
+  border: none !important;
+  background: transparent !important;
+}
+
+body.proflex-dark .rc-anchor-light {
+  color: #ffffff !important;
 }

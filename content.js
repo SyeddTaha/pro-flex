@@ -11,6 +11,14 @@
   const DARK_OVERLAY_ID = 'proflex-dark-overlay';
   const THEME_STORAGE_KEY = 'proflex-theme';
   const EXPECTED_MARKS_STORAGE_KEY = 'proflex-expected-marks-v1';
+  const TRANSCRIPT_GPA_STORAGE_KEY = 'proflex-transcript-gpa-v1';
+  
+  // feature flags (defaults true)
+  let featureFeedbackEnabled = true;
+  let featureMarksEnabled = true;
+  let featureTranscriptEnabled = true;
+  let featureThemeEnabled = true;
+  let featureReportEnabled = true;
 
   let currentTheme = 'light';
   let themeToggleButton = null;
@@ -74,10 +82,163 @@
   }
 
   // Initialize dark mode on all portal pages
-  if (IS_PORTAL_PAGE) {
-    currentTheme = readInitialTheme();
-    applyTheme(currentTheme);
-    themeToggleButton = createThemeToggleButton();
+  // Defer initialization until we read stored feature toggles from extension storage
+  function initExtensionAfterSettings() {
+    if (IS_PORTAL_PAGE) {
+      currentTheme = readInitialTheme();
+      if (featureThemeEnabled) {
+        applyTheme(currentTheme);
+        themeToggleButton = createThemeToggleButton();
+      }
+    }
+
+    // Initialize feature-specific functionality only on designated pages
+    const ROOT_ID = 'proflex-root';
+    if (document.getElementById(ROOT_ID)) {
+      return;
+    }
+
+    if (!IS_FEEDBACK_PAGE && !IS_MARKS_PAGE && !IS_TRANSCRIPT_PAGE) {
+      return;
+    }
+
+    const root = document.createElement('div');
+    root.id = ROOT_ID;
+    (document.body || document.documentElement).appendChild(root);
+
+    if (IS_FEEDBACK_PAGE && featureFeedbackEnabled) {
+      initFeedbackPage();
+    }
+
+    if (IS_MARKS_PAGE && featureMarksEnabled) {
+      initMarksPage();
+    }
+
+    if (IS_TRANSCRIPT_PAGE && featureTranscriptEnabled) {
+      initTranscriptPage();
+    }
+  }
+
+  // Read saved feature toggles (from extension popup) if available
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get({
+      feature_feedback: true,
+      feature_marks: true,
+      feature_transcript: true,
+      feature_theme: true,
+      feature_report: true,
+    }, (items) => {
+      featureFeedbackEnabled = !!items.feature_feedback;
+      featureMarksEnabled = !!items.feature_marks;
+      featureTranscriptEnabled = !!items.feature_transcript;
+      featureThemeEnabled = !!items.feature_theme;
+      featureReportEnabled = !!items.feature_report;
+
+      // register download handler only if report feature enabled
+      if (featureReportEnabled) {
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+          chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+            if (!message || message.type !== 'proflex-download-student-report') {
+              return false;
+            }
+
+            buildStudentReport()
+              .then((reportContent) => {
+                const dateStamp = new Date().toISOString().slice(0, 10);
+                downloadTextFile(`proflex-student-report-${dateStamp}.txt`, reportContent);
+                sendResponse({ ok: true });
+              })
+              .catch((error) => {
+                const messageText = error && error.message ? error.message : 'Could not build student report.';
+                console.error('[ProFlex] Student report generation failed:', error);
+                sendResponse({ ok: false, error: messageText });
+              });
+
+            return true;
+          });
+        }
+      }
+
+      initExtensionAfterSettings();
+    });
+  } else {
+    initExtensionAfterSettings();
+  }
+
+  // React to runtime toggle changes so popup toggles affect active pages
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'local') return;
+
+      if (changes.feature_feedback) {
+        featureFeedbackEnabled = !!changes.feature_feedback.newValue;
+        if (featureFeedbackEnabled) {
+          try { initFeedbackPage(); } catch (e) { console.warn('[ProFlex] enable feedback failed', e); }
+        } else {
+          // remove feedback elements
+          const fab = document.getElementById('proflex-fab');
+          const panel = document.getElementById('proflex-panel');
+          if (fab) fab.remove();
+          if (panel) panel.remove();
+        }
+      }
+
+      if (changes.feature_marks) {
+        featureMarksEnabled = !!changes.feature_marks.newValue;
+        const summary = document.getElementById('proflex-marks-summary');
+        if (!featureMarksEnabled && summary) {
+          summary.remove();
+        }
+        if (featureMarksEnabled) {
+          try { initMarksPage(); } catch (e) { console.warn('[ProFlex] enable marks failed', e); }
+        }
+      }
+
+      if (changes.feature_transcript) {
+        featureTranscriptEnabled = !!changes.feature_transcript.newValue;
+        const card = document.getElementById('proflex-gpa-card');
+        if (!featureTranscriptEnabled && card) card.remove();
+        if (featureTranscriptEnabled) {
+          try { initTranscriptPage(); } catch (e) { console.warn('[ProFlex] enable transcript failed', e); }
+        }
+      }
+
+      if (changes.feature_theme) {
+        featureThemeEnabled = !!changes.feature_theme.newValue;
+        if (!featureThemeEnabled) {
+          // remove theme control if present
+          const tbtn = document.getElementById('proflex-theme-toggle');
+          if (tbtn) tbtn.remove();
+        } else {
+          if (!document.getElementById('proflex-theme-toggle')) {
+            themeToggleButton = createThemeToggleButton();
+            syncThemeToggleState();
+          }
+        }
+      }
+    });
+  }
+
+  if (IS_PORTAL_PAGE && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+      if (!message || message.type !== 'proflex-download-student-report') {
+        return false;
+      }
+
+      buildStudentReport()
+        .then((reportContent) => {
+          const dateStamp = new Date().toISOString().slice(0, 10);
+          downloadTextFile(`proflex-student-report-${dateStamp}.txt`, reportContent);
+          sendResponse({ ok: true });
+        })
+        .catch((error) => {
+          const messageText = error && error.message ? error.message : 'Could not build student report.';
+          console.error('[ProFlex] Student report generation failed:', error);
+          sendResponse({ ok: false, error: messageText });
+        });
+
+      return true;
+    });
   }
 
   // Initialize feature-specific functionality only on designated pages
@@ -220,19 +381,19 @@
     wrapper.id = 'proflex-theme-toggle';
     wrapper.className = 'proflex-theme-toggle';
     wrapper.innerHTML = `
-      <span class="proflex-theme-label proflex-theme-label-light" data-role="theme-light-label" aria-hidden="true">${darkModeIcon()}</span>
+      <span class="proflex-theme-label proflex-theme-label-dark" data-role="theme-dark-label" aria-hidden="true">${darkModeIcon()}</span>
       <label class="proflex-theme-switch-wrap" for="proflex-theme-switch">
         <input id="proflex-theme-switch" type="checkbox" class="proflex-theme-switch" aria-label="Toggle between dark and light mode">
         <span class="proflex-theme-switch-track" aria-hidden="true">
           <span class="proflex-theme-switch-thumb"></span>
         </span>
       </label>
-      <span class="proflex-theme-label proflex-theme-label-dark" data-role="theme-dark-label" aria-hidden="true">${lightModeIcon()}</span>
+      <span class="proflex-theme-label proflex-theme-label-light" data-role="theme-light-label" aria-hidden="true">${lightModeIcon()}</span>
     `;
 
     const switchInput = wrapper.querySelector('#proflex-theme-switch');
     switchInput.addEventListener('change', () => {
-      applyTheme(switchInput.checked ? 'dark' : 'light');
+      applyTheme(switchInput.checked ? 'light' : 'dark');
     });
 
     (document.body || document.documentElement).appendChild(wrapper);
@@ -247,18 +408,18 @@
 
     const switchInput = themeToggleButton.querySelector('#proflex-theme-switch');
     if (switchInput) {
-      switchInput.checked = currentTheme === 'dark';
+      switchInput.checked = currentTheme === 'light';
     }
 
-    const lightLabel = themeToggleButton.querySelector('[data-role="theme-light-label"]');
     const darkLabel = themeToggleButton.querySelector('[data-role="theme-dark-label"]');
-
-    if (lightLabel) {
-      lightLabel.classList.toggle('proflex-theme-label-active', currentTheme !== 'dark');
-    }
+    const lightLabel = themeToggleButton.querySelector('[data-role="theme-light-label"]');
 
     if (darkLabel) {
       darkLabel.classList.toggle('proflex-theme-label-active', currentTheme === 'dark');
+    }
+
+    if (lightLabel) {
+      lightLabel.classList.toggle('proflex-theme-label-active', currentTheme === 'light');
     }
 
     themeToggleButton.setAttribute('aria-label', currentTheme === 'dark' ? 'Toggle to light mode' : 'Toggle to dark mode');
@@ -919,6 +1080,9 @@
       return;
     }
 
+    const transcriptGpaStore = loadTranscriptGpaStore();
+    const semesterStoragePrefix = `${PATHNAME}::${semesterData.title}::`;
+
     const courseRowsContainer = calculatorCard.querySelector('[data-role="course-rows"]');
     const summaryElements = {
       sgpa: calculatorCard.querySelector('[data-role="projected-sgpa"]'),
@@ -951,7 +1115,18 @@
       if (course.nonCredit) {
         pointsCell.textContent = '0.00';
       } else {
-        const select = createGradeSelect(course.currentGrade, () => updateTranscriptProjection());
+        const courseStorageKey = `${semesterStoragePrefix}${course.code}::${course.name}`;
+        const savedGrade = transcriptGpaStore[courseStorageKey];
+        const selectedGrade = typeof savedGrade === 'string' ? savedGrade : course.currentGrade;
+        const select = createGradeSelect(course.currentGrade, selectedGrade, (nextGrade) => {
+          if (nextGrade === course.currentGrade) {
+            delete transcriptGpaStore[courseStorageKey];
+          } else {
+            transcriptGpaStore[courseStorageKey] = nextGrade;
+          }
+          saveTranscriptGpaStore(transcriptGpaStore);
+          updateTranscriptProjection();
+        });
         gradeCell.textContent = '';
         gradeCell.appendChild(select);
       }
@@ -966,9 +1141,17 @@
     });
 
     calculatorCard.querySelector('[data-role="reset-grades"]').addEventListener('click', () => {
+      Object.keys(transcriptGpaStore).forEach((key) => {
+        if (key.startsWith(semesterStoragePrefix)) {
+          delete transcriptGpaStore[key];
+        }
+      });
+
       calculatorCard.querySelectorAll('select[data-role="grade-select"]').forEach((select) => {
         select.value = select.dataset.defaultGrade;
       });
+
+      saveTranscriptGpaStore(transcriptGpaStore);
       updateTranscriptProjection();
     });
 
@@ -979,7 +1162,7 @@
       courseEntries.forEach((entry) => {
         const select = entry.row.querySelector('select[data-role="grade-select"]');
         const grade = select ? select.value : 'S';
-        const gradePoints = GRADE_SCALE[grade] || 0;
+        const gradePoints = getGradePoints(grade);
         const rowPoints = entry.nonCredit ? 0 : entry.credits * gradePoints;
 
         const pointsCell = entry.row.children[5];
@@ -1057,7 +1240,7 @@
     return card;
   }
 
-  function createGradeSelect(defaultGrade, onChange) {
+  function createGradeSelect(defaultGrade, selectedGrade, onChange) {
     const select = document.createElement('select');
     select.className = 'proflex-grade-select';
     select.dataset.role = 'grade-select';
@@ -1068,13 +1251,178 @@
     grades.forEach((grade) => {
       const option = document.createElement('option');
       option.value = grade;
-      option.textContent = `${grade} (${formatNumber(GRADE_SCALE[grade] || 0)})`;
+      option.textContent = `${grade} (${formatNumber(getGradePoints(grade))})`;
       select.appendChild(option);
     });
 
-    select.value = defaultGrade && grades.includes(defaultGrade) ? defaultGrade : 'I';
-    select.addEventListener('change', onChange);
+    const fallbackGrade = defaultGrade && grades.includes(defaultGrade) ? defaultGrade : 'B';
+    select.value = selectedGrade && grades.includes(selectedGrade) ? selectedGrade : fallbackGrade;
+    select.addEventListener('change', () => onChange(select.value));
     return select;
+  }
+
+  function loadTranscriptGpaStore() {
+    try {
+      const raw = localStorage.getItem(TRANSCRIPT_GPA_STORAGE_KEY);
+      if (!raw) {
+        return {};
+      }
+
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (error) {
+      console.warn('[ProFlex] Could not read transcript GPA store:', error);
+      return {};
+    }
+  }
+
+  function saveTranscriptGpaStore(store) {
+    try {
+      localStorage.setItem(TRANSCRIPT_GPA_STORAGE_KEY, JSON.stringify(store || {}));
+    } catch (error) {
+      console.warn('[ProFlex] Could not save transcript GPA store:', error);
+    }
+  }
+
+  async function buildStudentReport() {
+    const [marksDoc, transcriptDoc] = await Promise.all([
+      fetchPortalDocument('/Student/StudentMarks'),
+      fetchPortalDocument('/Student/Transcript'),
+    ]);
+
+    const marksSnapshot = extractMarksSnapshotForReport(marksDoc);
+    const transcriptSnapshot = extractTranscriptSnapshotForReport(transcriptDoc);
+
+    const lines = [];
+    lines.push('ProFlex Student Report');
+    lines.push(`Generated: ${new Date().toLocaleString()}`);
+    lines.push(`Source: ${window.location.origin}`);
+    lines.push('');
+    lines.push('Current CGPA');
+    lines.push(`- ${formatNumber(transcriptSnapshot.currentCgpa)}`);
+    lines.push('');
+    lines.push('Attendance');
+
+    if (marksSnapshot.attendanceEntries.length === 0) {
+      lines.push('- No attendance values found on StudentMarks page.');
+    } else {
+      marksSnapshot.attendanceEntries.forEach((entry) => {
+        lines.push(`- ${entry.course}: ${entry.value}`);
+      });
+    }
+
+    lines.push('');
+    lines.push('Marks By Course');
+
+    if (marksSnapshot.courseTotals.length === 0) {
+      lines.push('- No course totals found on StudentMarks page.');
+    } else {
+      marksSnapshot.courseTotals.forEach((course) => {
+        lines.push(`- ${course.course}: ${formatNumber(course.obtained)} / ${formatNumber(course.total)}`);
+      });
+    }
+
+    return lines.join('\n');
+  }
+
+  async function fetchPortalDocument(pathname) {
+    const url = new URL(pathname, window.location.origin).toString();
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+    });
+
+    const html = await response.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const responsePath = new URL(response.url, window.location.origin).pathname;
+    const title = normalizeText(doc.title || '');
+    const hasLoginForm = !!doc.querySelector('form[action*="Login"], #kt_login_signin_form, .g-recaptcha, .rc-anchor');
+
+    if (!response.ok || /\/Login$/i.test(responsePath) || (/login/i.test(title) && hasLoginForm)) {
+      throw new Error('Session appears expired. Please sign in to Flex and try downloading the report again.');
+    }
+
+    return doc;
+  }
+
+  function extractMarksSnapshotForReport(doc) {
+    const panes = Array.from(doc.querySelectorAll('.tab-content .tab-pane'));
+    const attendanceEntries = [];
+    const courseTotals = [];
+
+    panes.forEach((pane, paneIndex) => {
+      const courseTitle = normalizeText(pane.querySelector('h5') ? pane.querySelector('h5').textContent : `Course ${paneIndex + 1}`);
+      const paneText = normalizeText(pane.textContent);
+      const attendanceMatch = paneText.match(/Attendance\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*%/i);
+      if (attendanceMatch) {
+        attendanceEntries.push({
+          course: courseTitle,
+          value: `${attendanceMatch[1]}%`,
+        });
+      }
+
+      const tables = Array.from(pane.querySelectorAll('table'));
+      let obtained = 0;
+      let total = 0;
+
+      tables.forEach((table) => {
+        if (isGrandTotalTable(table)) {
+          return;
+        }
+
+        const sectionTotal = extractMarksTableTotal(table);
+        if (!sectionTotal) {
+          return;
+        }
+
+        obtained += sectionTotal.obtained;
+        total += sectionTotal.total;
+      });
+
+      if (obtained > 0 || total > 0) {
+        courseTotals.push({
+          course: courseTitle,
+          obtained,
+          total,
+        });
+      }
+    });
+
+    return {
+      attendanceEntries,
+      courseTotals,
+    };
+  }
+
+  function extractTranscriptSnapshotForReport(doc) {
+    const semesterBlocks = Array.from(doc.querySelectorAll('.m-section__content .row .col-md-6'))
+      .filter((block) => block.querySelector('table'));
+    let currentCgpa = NaN;
+
+    semesterBlocks.forEach((block) => {
+      const summaryText = normalizeText(block.querySelector('.pull-right') ? block.querySelector('.pull-right').textContent : '');
+      const cgpa = parseMetric(summaryText, /CGPA\s*: ?([\d.]+)/i);
+      if (Number.isFinite(cgpa)) {
+        currentCgpa = cgpa;
+      }
+    });
+
+    return {
+      currentCgpa: Number.isFinite(currentCgpa) ? currentCgpa : 0,
+    };
+  }
+
+  function downloadTextFile(fileName, content) {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(objectUrl);
   }
 
   function extractSemesterData(currentSemesterBlock) {
@@ -1200,6 +1548,27 @@
 
     const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
     return rounded.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+  }
+
+  // Safe grade points accessor to avoid referencing top-level bindings
+  function getGradePoints(grade) {
+    const _scale = {
+      'A': 4,
+      'A-': 3.67,
+      'B+': 3.33,
+      'B': 3,
+      'B-': 2.67,
+      'C+': 2.33,
+      'C': 2,
+      'C-': 1.67,
+      'D+': 1.33,
+      'D': 1,
+      'F': 0,
+      'I': 0,
+      'S': 0,
+    };
+
+    return Number.isFinite(_scale[grade]) ? _scale[grade] : 0;
   }
 
   function normalizeText(value) {

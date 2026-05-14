@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ProFlex</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="popup-shell small">
+    <header class="popup-head tabs">
+      <button class="tab active" data-tab="features">Features</button>
+      <button class="tab" data-tab="feedback">Feedback</button>
+    </header>
+
+    <section id="features" class="tab-panel">
+      <div class="feature-row">
+        <span class="feature-check" aria-hidden="true">✓</span>
+        <div class="feature-name">Feedback Filler</div>
+      </div>
+      <div class="feature-row">
+        <span class="feature-check" aria-hidden="true">✓</span>
+        <div class="feature-name">Marks Projection</div>
+      </div>
+      <div class="feature-row">
+        <span class="feature-check" aria-hidden="true">✓</span>
+        <div class="feature-name">Transcript GPA</div>
+      </div>
+      <div class="feature-row">
+        <span class="feature-check" aria-hidden="true">✓</span>
+        <div class="feature-name">Theme Toggle</div>
+      </div>
+      <div class="feature-row">
+        <span class="feature-check" aria-hidden="true">✓</span>
+        <div class="feature-name">Student Report</div>
+      </div>
+    </section>
+
+    <section id="feedback" class="tab-panel" aria-label="Send feedback" hidden>
+      <form id="form">
+        <p class="feedback-sub">Got an idea to make this better? Drop it below</p>
+        <label>
+          Email
+          <input type="email" name="email" required>
+        </label>
+        <label>
+          Message
+          <textarea name="message" rows="4" required></textarea>
+        </label>
+        <div class="feedback-actions">
+          <button type="submit">Send</button>
+          <div id="feedback-status" role="status" aria-live="polite"></div>
+        </div>
+      </form>
+    </section>
+
+    <footer class="popup-foot">
+      <a href="https://github.com/SyeddTaha/" id="developer-link" target="_blank" rel="noreferrer">Developer: Taha Jaffri</a>
+    </footer>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>
