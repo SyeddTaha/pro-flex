@@ -1,18 +1,29 @@
 {
   "manifest_version": 3,
   "name": "ProFlex",
+  "short_name": "ProFlex",
   "version": "2.0.1",
-  "description": "ProFlex injects helper tools into NU portal pages for feedback filling, marks recalculation, transcript GPA projection, and theme toggling.",
+  "description": "ProFlex adds helper tools to NU portal pages for feedback, marks recalculation, GPA projection, and theme toggling.",
+  "homepage_url": "https://github.com/SyeddTaha/pro-flex",
   "icons": {
-    "16":  "icon16.png",
-    "32":  "icon32.png",
-    "48":  "icon48.png",
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
     "128": "icon128.png"
   },
   "action": {
     "default_title": "ProFlex",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
   },
+  "host_permissions": [
+    "*://flexstudent.nu.edu.pk/*"
+  ],
   "content_scripts": [
     {
       "matches": ["*://flexstudent.nu.edu.pk/*"],
