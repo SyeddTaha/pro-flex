@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ProFlex",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "ProFlex injects helper tools into NU portal pages for feedback filling, marks recalculation, transcript GPA projection, and theme toggling.",
   "icons": {
     "16":  "icon16.png",

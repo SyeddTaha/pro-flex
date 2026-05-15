@@ -85,7 +85,7 @@
         }
 
         body.proflex-dark,
-        body.proflex-dark div,
+        body.proflex-dark div:not(.progress-bar),
         body.proflex-dark section,
         body.proflex-dark header,
         body.proflex-dark main,
@@ -284,9 +284,9 @@
         body.proflex-dark .card,
         body.proflex-dark .panel,
         body.proflex-dark .panel-body {
-          background-color: #121212 !important;
-          color: #e0e0e0 !important;
-          border-color: #333 !important;
+          background-color: #0c1320 !important;
+          color: #e5eefc !important;
+          border-color: #253247 !important;
         }
         body.proflex-dark a { color: #bb86fc !important; }
         body.proflex-dark .btn { background-color: #333 !important; color: #fff !important; }

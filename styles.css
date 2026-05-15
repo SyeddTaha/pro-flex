@@ -674,6 +674,14 @@ body .tab-content td.m--font-danger label {
   color: #ffffff !important;
 }
 
+body.proflex-dark .tab-content td.m--font-danger.text-center,
+body.proflex-dark .tab-content td.m--font-danger,
+body.proflex-dark .tab-content td.m--font-danger b,
+body.proflex-dark .tab-content td.m--font-danger label {
+  background: #a31c1c !important;
+  color: #ffffff !important;
+}
+
 body .tab-content td.m--font-danger label,
 body .tab-content td.m--font-danger b {
   font-weight: 800 !important;
