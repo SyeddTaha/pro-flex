@@ -105,13 +105,6 @@
           color: #e5eefc !important;
           border-color: #253247 !important;
         }
-        body.proflex-dark .progress {
-          background-color: #1f3a4d !important;
-        }
-        body.proflex-dark .progress-bar,
-        body.proflex-dark .bg-success {
-          background-color: #16a34a !important;
-        }
       `;
       document.head.appendChild(style);
     }
@@ -275,7 +268,7 @@
       style.id = DARK_STYLE_ID;
       style.textContent = `
         body.proflex-dark,
-        body.proflex-dark div,
+        body.proflex-dark div:not(.progress-bar),
         body.proflex-dark section,
         body.proflex-dark header,
         body.proflex-dark main,
@@ -295,7 +288,6 @@
           color: #e0e0e0 !important;
           border-color: #333 !important;
         }
-
         body.proflex-dark a { color: #bb86fc !important; }
         body.proflex-dark .btn { background-color: #333 !important; color: #fff !important; }
       `;
@@ -374,13 +366,15 @@
       }
     });
 
-    // Build minimal widget showing only absents
+    const totalClasses = rows.length;
+
+    // Build compact widget showing absence totals only
     const widget = document.createElement('div');
     widget.className = 'proflex-attendance-helper';
     widget.innerHTML = `
-      <div class="proflex-attendance-head">Attendance</div>
       <div class="proflex-attendance-body">
-        <div><strong>Absents:</strong> ${absents}</div>
+        <div class="proflex-attendance-absents"><span class="proflex-attendance-label">Absents</span><span class="proflex-attendance-value">${absents}</span></div>
+        <div class="proflex-attendance-total"><span class="proflex-attendance-label">Total Classes</span><span class="proflex-attendance-value">${totalClasses}</span></div>
       </div>
     `;
 
@@ -388,11 +382,26 @@
     const tableParent = table.parentElement || pane;
     tableParent.insertBefore(widget, table);
 
-    // Minimal color hint for absents (red if any absents)
-    const absEl = widget.querySelector('.proflex-attendance-body div');
-    if (absEl) {
-      absEl.style.color = absents > 0 ? '#a32222' : '#0b6623';
-    }
+    styleAttendanceProgressBar(pane);
+
+  }
+
+  function styleAttendanceProgressBar(pane) {
+    if (!pane) return;
+
+    const progressBar = pane.querySelector('.progress-bar');
+    if (!progressBar) return;
+
+    const valueMatch = (progressBar.getAttribute('aria-valuenow') || normalizeText(progressBar.textContent)).match(/\d+(?:\.\d+)?/);
+    if (!valueMatch) return;
+
+    const value = parseFloat(valueMatch[0]);
+    if (!Number.isFinite(value)) return;
+
+    const isPassing = value >= 80;
+    progressBar.style.backgroundColor = isPassing ? '#16a34a' : '#dc2626';
+    progressBar.style.color = '#ffffff';
+    progressBar.style.borderColor = isPassing ? '#16a34a' : '#dc2626';
   }
   
 
@@ -431,6 +440,7 @@
     `;
 
     const switchInput = wrapper.querySelector('#proflex-theme-switch');
+    switchInput.checked = readInitialTheme() === 'light';
     switchInput.addEventListener('change', () => {
       applyTheme(switchInput.checked ? 'light' : 'dark');
     });
@@ -443,6 +453,11 @@
   function syncThemeToggleState() {
     if (!themeToggleButton) {
       return;
+    }
+
+    const savedTheme = readInitialTheme();
+    if (savedTheme === 'dark' || savedTheme === 'light') {
+      currentTheme = savedTheme;
     }
 
     const switchInput = themeToggleButton.querySelector('#proflex-theme-switch');

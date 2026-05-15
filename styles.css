@@ -84,13 +84,45 @@ body.proflex-dark table thead th {
   background: #183055 !important;
   color: #ffffff !important;
   border-color: var(--proflex-border) !important;
+.proflex-attendance-helper .proflex-attendance-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
 }
 
-body.proflex-dark .table tbody td,
-body.proflex-dark table tbody td {
-  background: var(--proflex-surface) !important;
-  color: var(--proflex-text) !important;
-  border-color: var(--proflex-border) !important;
+.proflex-attendance-helper .proflex-attendance-body div {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.proflex-attendance-helper .proflex-attendance-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--proflex-muted);
+}
+
+.proflex-attendance-helper .proflex-attendance-value {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.proflex-attendance-helper .proflex-attendance-absents .proflex-attendance-value {
+  background: #dc2626;
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 10px;
+  min-width: 44px;
+  text-align: center;
+}
+
+.proflex-attendance-helper .proflex-attendance-total .proflex-attendance-value {
+  color: var(--proflex-text);
+}
 }
 
 body.proflex-dark a {
@@ -149,25 +181,6 @@ body.proflex-dark .m-footer__wrapper,
 body.proflex-dark .page-footer {
   background: #0c1320 !important;
   color: var(--proflex-text) !important;
-}
-
-body.proflex-dark .progress,
-body.proflex-dark .progress-bar,
-body.proflex-dark .bg-success,
-body.proflex-dark .progress-bar-striped,
-body.proflex-dark .progress-bar-animated {
-  background-color: #16a34a !important;
-}
-
-body.proflex-dark .progress {
-  background-color: #1f3a4d !important;
-}
-
-body.proflex-dark .progress .progress-bar,
-body.proflex-dark .progress-bar.bg-success,
-body.proflex-dark div[class*="progress-bar"] {
-  background-color: #16a34a !important;
-  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent) !important;
 }
 
 body.proflex-dark {
@@ -613,11 +626,58 @@ body.proflex-dark .proflex-theme-switch:checked + .proflex-theme-switch-track {
   color: var(--proflex-text);
   font-size: 13px;
 }
-.proflex-attendance-helper .proflex-attendance-head {
-  font-weight: 700;
-  margin-bottom: 6px;
+.proflex-attendance-helper .proflex-attendance-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
 }
-.proflex-attendance-helper .proflex-attendance-body div { margin-bottom: 4px; }
+
+.proflex-attendance-helper .proflex-attendance-body > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.proflex-attendance-helper .proflex-attendance-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--proflex-muted);
+}
+
+.proflex-attendance-helper .proflex-attendance-value {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.proflex-attendance-helper .proflex-attendance-absents .proflex-attendance-value {
+  background: #dc2626;
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 10px;
+  min-width: 44px;
+  text-align: center;
+}
+
+.proflex-attendance-helper .proflex-attendance-total .proflex-attendance-value {
+  color: var(--proflex-text);
+}
+
+body .tab-content td.m--font-danger.text-center,
+body .tab-content td.m--font-danger,
+body .tab-content td.m--font-danger b,
+body .tab-content td.m--font-danger label {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+body .tab-content td.m--font-danger label,
+body .tab-content td.m--font-danger b {
+  font-weight: 800 !important;
+}
 
 .proflex-marks-editor {
   margin-top: 14px;
