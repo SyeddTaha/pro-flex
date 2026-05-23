@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Allow: /ss/
+Allow: /docs/
+Disallow: /node_modules/
+
+# Sitemaps
+Sitemap: https://github.com/SyeddTaha/pro-flex/raw/main/sitemap.xml
+
+# Crawl delay (optional - generous for small sites)
+Crawl-delay: 1
+
+# Request rate (optional)
+Request-rate: 30/60
