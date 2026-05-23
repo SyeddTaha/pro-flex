@@ -356,6 +356,7 @@ img {
 
 .hero-card-frame img {
   width: 100%;
+  height: auto;
   object-fit: cover;
   object-position: center;
 }
@@ -443,6 +444,8 @@ img {
   padding: 22px 10px 4px;
   /* ensure anchor targets are visible below the sticky topbar */
   scroll-margin-top: 96px;
+  content-visibility: auto;
+  contain-intrinsic-size: 900px;
 }
 
 .section-heading {
@@ -529,6 +532,7 @@ img {
 .showcase-card img {
   width: 100%;
   aspect-ratio: 16 / 10;
+  height: auto;
   object-fit: cover;
   object-position: center;
   border-bottom: 1px solid rgba(167, 190, 221, 0.48);

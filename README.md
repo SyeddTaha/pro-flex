@@ -1,5 +1,5 @@
 ## ProFlex
-<img width="1400" height="560" alt="ProFlex extension for FAST NUCES FLEX" src="ss/1.png" />
+<img width="1400" height="460" alt="ProFlex extension for FAST NUCES FLEX" src="ss/1.png" />
 
 
 ProFlex is a small Chrome extension (Manifest V3) that adds lightweight productivity helpers to the FlexStudent portal pages. It is intended for local use to improve convenience when viewing marks, filling course feedback, and previewing GPA changes.
@@ -14,17 +14,28 @@ ProFlex is a small Chrome extension (Manifest V3) that adds lightweight producti
 
 ## Screenshots
 
-### Dark Theme
-<img width="800"  alt="Dark Theme for FAST NUCES FLEX" src="ss/2.png" />
-
-### Marks Prediction
-<img width="800"  alt="Marks for FAST NUCES FLEX" src="ss/3.png" />
-
-### GPA Calculator
-<img width="800" alt="GPA for FAST NUCES FLEX" src="ss/4.png" />
-
-### Attendance
-<img width="800" alt="Attendance for FAST NUCES FLEX" src="ss/5.png" />
+<table>
+	<tr>
+		<td align="center">
+			<img width="480" alt="ProFlex theme switch and portal preview" src="ss/2-960.jpg" />
+			<br><strong>Theme Switch</strong>
+		</td>
+		<td align="center">
+			<img width="480" alt="ProFlex marks projection preview" src="ss/3-960.jpg" />
+			<br><strong>Marks Projection</strong>
+		</td>
+	</tr>
+	<tr>
+		<td align="center">
+			<img width="480" alt="ProFlex transcript GPA preview" src="ss/4-960.jpg" />
+			<br><strong>Transcript GPA Preview</strong>
+		</td>
+		<td align="center">
+			<img width="480" alt="ProFlex attendance helper preview" src="ss/5-960.jpg" />
+			<br><strong>Attendance Helper</strong>
+		</td>
+	</tr>
+</table>
 
 
 ## Privacy & Data Handling
@@ -40,12 +51,35 @@ ProFlex is a small Chrome extension (Manifest V3) that adds lightweight producti
 
 
 ## What users say
-<img width="200" alt="WhatsApp Image 2026-05-15 at 12 58 44 AM (1)" src="https://github.com/user-attachments/assets/c3e07e28-f784-4bb6-80ff-eeb5993c9118" />
-<img width="200" alt="WhatsApp Image 2026-05-15 at 12 58 44 AM (2)" src="https://github.com/user-attachments/assets/f1e1467f-ce9f-4aa4-80c2-2c20cabfbbd8" />
-<img width="200" alt="WhatsApp Image 2026-05-15 at 12 58 44 AM" src="https://github.com/user-attachments/assets/f93dcb0b-a16f-4053-8241-b9a81acb8248" />
-<img width="200" alt="WhatsApp Image 2026-05-15 at 12 58 45 AM" src="https://github.com/user-attachments/assets/a6a7e549-4903-4290-90db-60aff4ae4ffa" />
-<img width="200" alt="image" src="https://github.com/user-attachments/assets/c2278b2d-cbbd-4572-9870-68120e59bd3f" />
-<img width="200" alt="image" src="https://github.com/user-attachments/assets/59d7665b-c5cd-494c-9c5e-986d65ccb137" />
+
+<table>
+	<tr>
+		<td valign="top" width="50%">
+			<strong>Saahil Ghulam Mohammad</strong> ★★★★★ <em>May 20, 2026</em><br>
+			really helpful and makes flex sm better
+		</td>
+		<td valign="top" width="50%">
+			<strong>k240904 Muhammad Abdullah Chohan</strong> ★★★★★ <em>May 16, 2026</em><br>
+			Crazyyy adding it right away to my Chrome Highly recommended as well
+		</td>
+	</tr>
+	<tr>
+		<td valign="top" width="50%">
+			<strong>Hur Ali</strong> ★★★★★ <em>May 15, 2026</em><br>
+			Amazing Extension. Really helpful to calculate initials of each course and loved the dark mode
+		</td>
+		<td valign="top" width="50%">
+			<strong>Bilal Ansari</strong> ★★★★★ <em>May 15, 2026</em><br>
+			best one
+		</td>
+	</tr>
+	<tr>
+		<td valign="top" colspan="2">
+			<strong>k240769 Vivek Kumar Ladhani</strong> ★★★★★ <em>May 15, 2026</em><br>
+			Loved it !!!
+		</td>
+	</tr>
+</table>
 
 ## Permissions
 - Host match: `*://flexstudent.nu.edu.pk/*`
