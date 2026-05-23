@@ -5,38 +5,85 @@
         xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
         xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+  <!-- Primary landing page (canonical) -->
   <url>
     <loc>https://github.com/SyeddTaha/pro-flex</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <image:image>
-      <image:loc>https://github.com/SyeddTaha/pro-flex/raw/main/ss/1.png</image:loc>
-      <image:title>ProFlex Chrome Extension Overview</image:title>
+      <image:loc>https://github.com/SyeddTaha/pro-flex/raw/main/ss/2-960.jpg</image:loc>
+      <image:title>ProFlex hero screenshot</image:title>
     </image:image>
   </url>
+
+  <!-- Section anchors on the landing page (indexed as fragment links) -->
   <url>
-    <loc>https://github.com/SyeddTaha/pro-flex/blob/main/README.md</loc>
+    <loc>https://github.com/SyeddTaha/pro-flex#features</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
+
   <url>
-    <loc>https://github.com/SyeddTaha/pro-flex/blob/main/privacy_policy.md</loc>
+    <loc>https://github.com/SyeddTaha/pro-flex#showcase</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://github.com/SyeddTaha/pro-flex/raw/main/ss/3-960.jpg</image:loc>
+      <image:title>Marks projection screenshot</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://github.com/SyeddTaha/pro-flex#faq</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
+
+  <url>
+    <loc>https://github.com/SyeddTaha/pro-flex#privacy</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://github.com/SyeddTaha/pro-flex#contact</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Repo pages and policy -->
+  <url>
+    <loc>https://github.com/SyeddTaha/pro-flex/blob/main/README.md</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://github.com/SyeddTaha/pro-flex/blob/main/privacy_policy.md</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- External storefront and developer profile -->
   <url>
     <loc>https://chromewebstore.google.com/detail/proflex/dpkkogfpngdakfinbadlnlapkingcjoe</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
+
   <url>
     <loc>https://github.com/SyeddTaha</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.5</priority>
   </url>
 </urlset>
