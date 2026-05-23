@@ -1,6 +1,7 @@
 reference.js
 *.html
 !popup.html
+!index.html
 /docs
 *.txt
 .env
