@@ -2,7 +2,7 @@
   'use strict';
 
   const PATHNAME = window.location.pathname;
-  const IS_FEEDBACK_PAGE = /\/Student\/CourseFeedback/i.test(PATHNAME);
+  const IS_FEEDBACK_PAGE = /\/Student\/(?:CourseFeedback|FeedBackQuestions|Feedback|FeedBack)/i.test(PATHNAME);
   const IS_MARKS_PAGE = /\/Student\/StudentMarks/i.test(PATHNAME);
   const IS_TRANSCRIPT_PAGE = /\/Student\/Transcript/i.test(PATHNAME);
   const IS_ATTENDANCE_PAGE = /\/Student\/(?:StudentAttendance|Attendance)/i.test(PATHNAME);
